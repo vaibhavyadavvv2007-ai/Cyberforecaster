@@ -1,0 +1,39 @@
+# CSE-CIC-IDS2018 curated download list.
+#
+# Keys below are the REAL bucket filenames, verified 2026-08-26 via --list
+# (prefix: "Processed Traffic Data for ML Algorithms/").
+#
+# The attack-per-day comments come from the dataset paper (Sharafaldin et al.
+# 2018) and are PROBABLY right but MUST be confirmed after download with:
+#   flows["Label"].value_counts()
+# That takes 30 seconds per file and is definitive. If a day's labels don't
+# match its comment, nothing breaks — just update the comment.
+
+bucket: cse-cic-ids2018
+prefix: Processed Traffic Data for ML Algorithms
+
+files:
+  - key: Processed Traffic Data for ML Algorithms/Wednesday-14-02-2018_TrafficForML_CICFlowMeter.csv
+    why: "VERIFIED 26-Aug: Benign 667k + FTP-Brute 193k + SSH-Brute 188k; file truncated at 13:00 (known quirk)"
+  - key: Processed Traffic Data for ML Algorithms/Thursday-15-02-2018_TrafficForML_CICFlowMeter.csv
+    why: "brute-force continuation + benign balance (~376MB)"
+  - key: Processed Traffic Data for ML Algorithms/Friday-16-02-2018_TrafficForML_CICFlowMeter.csv
+    why: "Botnet ARES day (~334MB) — our C2/beaconing family"
+  - key: Processed Traffic Data for ML Algorithms/Wednesday-21-02-2018_TrafficForML_CICFlowMeter.csv
+    why: "DoS GoldenEye/Hulk/Slowhttptest day (~329MB)"
+  - key: Processed Traffic Data for ML Algorithms/Friday-23-02-2018_TrafficForML_CICFlowMeter.csv
+    why: "DDoS LOIC day (~383MB)"
+  - key: Processed Traffic Data for ML Algorithms/Wednesday-28-02-2018_TrafficForML_CICFlowMeter.csv
+    why: "Web attacks (XSS / SQLi / brute) day (~209MB)"
+  - key: Processed Traffic Data for ML Algorithms/Thursday-01-03-2018_TrafficForML_CICFlowMeter.csv
+    why: "Infiltration day (~108MB, smallest file) — tiny class but big demo-story value"
+
+# Deliberately SKIPPED:
+#   Thuesday-20-02-2018 (~4.05 GB!) — brute-force/botnet overlap; huge; skip.
+#   Friday-02-03-2018, Thursday-22-02-2018 — add later ONLY if a family is missing.
+# Total planned pull ≈ 2.1 GB.
+
+# Secondary dataset (manual download, Tier 2): CTU-13 scenario zips
+# https://www.stratosphereips.org/datasets-ctu13 — used ONLY for held-out
+# cross-dataset evaluation. Do not attempt before Gate 2 (Sep 2).
+ctu13_url: https://www.stratosphereips.org/datasets-ctu13
