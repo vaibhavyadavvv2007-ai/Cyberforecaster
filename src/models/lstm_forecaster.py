@@ -1,12 +1,17 @@
 """Temporal forecaster: 2-layer LSTM → direct multi-horizon heads.
 
 Outputs per input sequence:
-  prog_logits (K,) — attack-progression probability for each of the next K windows
+  prog_logits (K,) — attack-progression probability for EACH of the next K windows
   stage_logits (n_stages,) — dominant stage over the horizon (multi-task head)
 
-Direct multi-horizon (teacher-forced labels), not recursive prediction-on-
-predictions: stable to train and defensible as "risk trajectory". Recursive
-latent rollout is the Tier-3 stretch (see forecasting/rollout.py).
+Direct multi-horizon (teacher-forced per-step labels), not recursive
+prediction-on-predictions: stable to train and defensible as "risk trajectory".
+Recursive latent rollout is the Tier-3 stretch (see forecasting/rollout.py).
+
+Inputs go through the SHARED transform in features/scaling.py — the same one the
+logistic baseline uses. Feeding this model raw features (as it originally did)
+while the baseline got StandardScaler made the PS-required benchmark unfair
+against our own hero model.
 
 Usage:
   python -m src.models.lstm_forecaster --dir data/processed [--epochs 40]
@@ -15,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 import numpy as np
@@ -30,16 +36,25 @@ except ImportError as exc:  # pragma: no cover
         "(Kaggle/Colab already ship CUDA builds)"
     ) from exc
 
-from sklearn.metrics import average_precision_score, f1_score, precision_score, recall_score
-from ..models.baseline_logreg import evaluate
+from sklearn.metrics import average_precision_score
+
+from ..features.scaling import apply_scaler, load_scaler
+from ..features.window_builder import horizon_any
+from .baseline_logreg import MAX_FPR, evaluate, pick_threshold, report
 
 N_STAGES = 6
+# Val is small (~430 sequences) so per-epoch val AP is NOISY — with patience 8
+# the best checkpoint can land at epoch 4 while the model has barely started
+# fitting (observed: train AP 0.545, max output prob 0.70 after the Aug-28 run).
+# Wider patience lets training actually converge before early stop fires.
+PATIENCE = 25
 
 
 class TemporalForecaster(nn.Module):
     def __init__(self, n_feat: int, seq_len: int = 10, horizon: int = 5,
                  hidden: int = 64, layers: int = 2, dropout: float = 0.2):
         super().__init__()
+        self.horizon = horizon
         self.lstm = nn.LSTM(n_feat, hidden, num_layers=layers, batch_first=True,
                             dropout=dropout if layers > 1 else 0.0)
         self.head = nn.Sequential(nn.Linear(hidden, hidden // 2), nn.ReLU(),
@@ -53,32 +68,68 @@ class TemporalForecaster(nn.Module):
         return self.prog_head(h), self.stage_head(h)
 
 
-def _loader(npz_dir: Path, name: str, batch: int, shuffle: bool):
+def _split(npz_dir: Path, name: str, sc: dict):
     d = np.load(npz_dir / f"sequences_{name}.npz", allow_pickle=False)
-    X = torch.from_numpy(d["X"]).float()
-    y = torch.from_numpy(d["y_prog"]).float()
-    s = torch.from_numpy(d["y_stage"]).long().clamp(min=-1)
-    return DataLoader(TensorDataset(X, y, s), batch_size=batch, shuffle=shuffle)
+    X = apply_scaler(d["X"], sc)                      # shared transform
+    return (torch.from_numpy(X).float(),
+            torch.from_numpy(d["y_prog"]).float(),    # (n, K) per-step labels
+            torch.from_numpy(d["y_stage"]).long())
+
+
+def _predict(model, X: torch.Tensor, dev: str, batch: int = 1024) -> np.ndarray:
+    """Pooled sigmoid probabilities (n, K) — no per-batch metric averaging."""
+    model.eval()
+    out = []
+    with torch.no_grad():
+        for i in range(0, len(X), batch):
+            out.append(torch.sigmoid(model(X[i:i + batch].to(dev))[0]).cpu().numpy())
+    return np.concatenate(out) if out else np.zeros((0, model.horizon))
+
+
+def _measure_cost(model, X: torch.Tensor, weights_path: Path) -> dict:
+    """Model size + single-sequence CPU latency — Q&A #13 wants real numbers."""
+    n_params = sum(p.numel() for p in model.parameters())
+    size_mb = weights_path.stat().st_size / 1e6 if weights_path.exists() else 0.0
+    cpu = model.to("cpu").eval()
+    one = X[:1].to("cpu")
+    with torch.no_grad():
+        for _ in range(10):
+            cpu(one)                                   # warm up
+        t0 = time.perf_counter()
+        for _ in range(100):
+            cpu(one)
+        latency_ms = (time.perf_counter() - t0) / 100 * 1000
+    return {"_params": int(n_params), "_size_mb": round(size_mb, 3),
+            "_latency_ms_cpu": round(latency_ms, 3)}
 
 
 def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
           lr: float = 1e-3, out_dir: Path | None = None) -> dict:
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"training on {dev}")
-    tr_dl = _loader(npz_dir, "train", batch, shuffle=True)
-    va_dl = _loader(npz_dir, "val", batch, shuffle=False)
-    n_feat = next(iter(tr_dl))[0].shape[-1]
+    sc = load_scaler(npz_dir / "scaler.npz")
+    Xtr, ytr, str_ = _split(npz_dir, "train", sc)
+    Xva, yva, sva = _split(npz_dir, "val", sc)
+    Xte, yte, ste = _split(npz_dir, "test", sc)
+    n_feat, K = Xtr.shape[-1], ytr.shape[1]
+    print(f"training on {dev} | train={len(Xtr)} val={len(Xva)} test={len(Xte)} "
+          f"| F={n_feat} K={K}")
 
-    # class imbalance: pos_weight from the training split only
-    n_pos = sum(int((yb > 0).sum()) for _, yb, _ in tr_dl)
-    n_all = sum(len(yb) for _, yb, _ in tr_dl)
-    pos_weight = torch.tensor([(n_all - n_pos) / max(n_pos, 1)], device=dev)
-    print(f"train split: {n_pos}/{n_all} positive windows → pos_weight={pos_weight.item():.2f}")
+    tr_dl = DataLoader(TensorDataset(Xtr, ytr, str_), batch_size=batch, shuffle=True)
 
-    model = TemporalForecaster(n_feat).to(dev)
+    # class imbalance: PER-HORIZON-STEP pos_weight from the training split only.
+    # Later steps are usually rarer, so one scalar would under-weight them.
+    n_pos = ytr.sum(dim=0)
+    pos_weight = ((len(ytr) - n_pos) / n_pos.clamp(min=1)).to(dev)
+    print("pos_weight per step:", [round(float(v), 2) for v in pos_weight])
+
+    model = TemporalForecaster(n_feat, horizon=K).to(dev)
     bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     ce = nn.CrossEntropyLoss(ignore_index=-1)
     opt = torch.optim.Adam(model.parameters(), lr=lr)
+
+    have_val = len(Xva) > 0 and float(horizon_any(yva.numpy()).sum()) > 0
+    if not have_val:
+        print("WARNING: val split unusable for model selection - falling back to last epoch")
 
     best_ap, best_state, bad = -1.0, None, 0
     for epoch in range(1, epochs + 1):
@@ -87,51 +138,64 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
             xb, yb, sb = xb.to(dev), yb.to(dev), sb.to(dev)
             opt.zero_grad()
             prog, stg = model(xb)
-            loss = bce(prog, yb.unsqueeze(1).expand_as(prog)) + ce(stg, sb)
+            loss = bce(prog, yb) + ce(stg, sb)         # yb is (B, K) — real targets
             loss.backward()
             opt.step()
 
-        model.eval()
-        aps, preds, golds = [], [], []
-        with torch.no_grad():
-            for xb, yb, sb in va_dl:
-                prob = torch.sigmoid(model(xb.to(dev))[0]).cpu()
-                aps.append(average_precision_score(yb.numpy(), prob.mean(dim=1).numpy())
-                           if yb.sum() > 0 else 0.0)
-                preds.append((prob.mean(dim=1) >= 0.5).int().numpy())
-                golds.append(yb.numpy().astype(int))
-        ap = float(np.mean([a for a in aps if not np.isnan(a)]))
-        f1 = f1_score(np.concatenate(golds), np.concatenate(preds), zero_division=0)
-        print(f"epoch {epoch:02d}  val AP={ap:.4f}  val F1={f1:.4f}")
+        if not have_val:
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+            continue
 
+        # AP computed ONCE over the pooled val split. Averaging per-batch AP
+        # (the original approach) is not AP — with ~10% positives many batches
+        # have no positives at all and silently scored 0.0, so checkpoint
+        # selection was driven by noise. Train AP is printed too: if it stays
+        # low the model is under-fitting, which no val metric will tell you.
+        p_va = _predict(model, Xva, dev)
+        ap = float(average_precision_score(horizon_any(yva.numpy()), p_va.max(axis=1)))
+        p_tr = _predict(model, Xtr, dev)
+        ap_tr = float(average_precision_score(horizon_any(ytr.numpy()), p_tr.max(axis=1)))
+        print(f"epoch {epoch:02d}  val AP(pooled)={ap:.4f}  train AP={ap_tr:.4f}")
         if ap > best_ap:
-            best_ap, best_state, bad = ap, {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}, 0
+            best_ap, bad = ap, 0
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
         else:
             bad += 1
-            if bad >= 6:
+            if bad >= PATIENCE:
                 print(f"early stop at epoch {epoch} (best val AP={best_ap:.4f})")
                 break
 
+    model.load_state_dict(best_state)
     out_dir = out_dir or Path("models") / "trained_models"
     out_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(best_state, out_dir / "lstm_forecaster.pt")
-    cfg = {"n_feat": int(n_feat), "hidden": 64, "layers": 2, "val_AP": best_ap}
+    weights = out_dir / "lstm_forecaster.pt"
+    torch.save(best_state, weights)
+
+    # threshold on VAL (never test), then honest test numbers
+    model = model.to(dev)
+    p_va = _predict(model, Xva, dev) if have_val else None
+    thr = pick_threshold(horizon_any(yva.numpy()), p_va.max(axis=1)) if have_val else 0.5
+    p_te = _predict(model, Xte, dev)
+    agg = evaluate(horizon_any(yte.numpy()), p_te.max(axis=1), thr)
+    per_step = [evaluate(yte.numpy()[:, k], p_te[:, k], thr) for k in range(K)]
+    report("LSTM forecaster", agg, per_step)
+
+    cost = _measure_cost(model, Xte if len(Xte) else Xtr, weights)
+    print(f"cost: {cost['_params']:,} params · {cost['_size_mb']} MB · "
+          f"{cost['_latency_ms_cpu']} ms/sequence on CPU")
+
+    cfg = {"n_feat": int(n_feat), "horizon": int(K), "hidden": 64, "layers": 2,
+           "val_AP": best_ap, "threshold": thr, "max_fpr": MAX_FPR}
     (out_dir / "lstm_config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
 
-    # honest test-split numbers for the benchmark table
-    model.load_state_dict(best_state)
-    model.eval()
-    d = np.load(npz_dir / "sequences_test.npz", allow_pickle=False)
-    with torch.no_grad():
-        prob = torch.sigmoid(model(torch.from_numpy(d["X"]).float().to(dev))[0]).cpu()
-    m = evaluate(d["y_prog"], prob.mean(dim=1).numpy())
-    print("\nTEST (chronological):")
-    for k, v in m.items():
-        print(f"  {k:<10} {v:.4f}" if isinstance(v, float) else f"  {k:<10} {v}")
+    payload = {**agg, "_per_step": per_step, "_n_train": int(len(Xtr)),
+               "_n_test": int(len(Xte)), "_max_fpr": MAX_FPR, "_val_ap": best_ap, **cost}
     metrics_path = Path("models") / "metrics_lstm.json"
-    metrics_path.write_text(json.dumps({"lstm": m}, indent=2), encoding="utf-8")
-    print(f"wrote {out_dir/'lstm_forecaster.pt'}, {metrics_path}")
-    return m
+    metrics_path.parent.mkdir(parents=True, exist_ok=True)
+    metrics_path.write_text(json.dumps({"lstm_forecaster": payload}, indent=2),
+                            encoding="utf-8")
+    print(f"wrote {weights}, {out_dir/'lstm_config.json'}, {metrics_path}")
+    return agg
 
 
 if __name__ == "__main__":

@@ -69,12 +69,24 @@ def stage_for_label(label: str) -> str:
     return FAMILY_STAGE.get(label, "Reconnaissance" if label not in (None, "Benign") else "")
 
 
-def rule_based_stage(f: dict, p99_bytes: float = 0.0, p99_pkts: float = 0.0) -> str:
+def rule_based_stage(f: dict, p99_bytes: float = 0.0, p99_pkts: float = 0.0,
+                     has_ip: bool | None = None) -> str:
     """Predict a stage from one window's aggregate features.
 
     `f` keys mirror the columns produced by features.window_builder.
     Ordered checks: first match wins. Thresholds are tunable knobs — tune them
     against validate_rules(), never by feel on demo day.
+
+    `has_ip`: whether the IP-derived features carry signal. CIC-IDS2018's
+    ML-ready CSVs ship NO Src IP / Dst IP columns (battle plan §5.2), so those
+    features are constant 0. Auto-detected when None. This matters a lot:
+      - the lateral-movement rule keyed on `east_west >= 3` could NEVER fire
+      - the C2 rule's `unique_dst_ips <= 3` clause was ALWAYS true, so C2
+        over-fired on anything with regular timing
+    Rather than invent a threshold that looks authoritative, we make the gap
+    explicit: with no IPs, lateral movement is UNDECIDABLE from these features
+    and the rule abstains. Say that out loud — an abstention you can explain
+    beats a rule the jury can break.
     """
     flow_count = f.get("flow_count", 0)
     syn_ratio = f.get("syn_ratio", 0.0)
@@ -84,7 +96,9 @@ def rule_based_stage(f: dict, p99_bytes: float = 0.0, p99_pkts: float = 0.0) -> 
     iat_mean = f.get("iat_mean", 0.0)
     iat_std = f.get("iat_std", 0.0)
     auth_share = f.get("auth_port_share", 0.0)
-    east_west = min(f.get("unique_src_ips", 1), f.get("unique_dst_ips", 1))
+    n_src, n_dst = f.get("unique_src_ips", 0), f.get("unique_dst_ips", 0)
+    if has_ip is None:
+        has_ip = (n_src > 0) or (n_dst > 0)
 
     # Order matters: distinctive signatures first, generic volume last —
     # otherwise every busy window collapses into "flood".
@@ -97,12 +111,18 @@ def rule_based_stage(f: dict, p99_bytes: float = 0.0, p99_pkts: float = 0.0) -> 
     # 3) volumetric flood (extreme on BOTH volume metrics) → DoS
     if p99_pkts > 0 and pkts_total > p99_pkts and p99_bytes > 0 and bytes_total > p99_bytes:
         return "DoS"
-    # 4) regular low-jitter beaconing to few destinations → C2
+    # 4) regular low-jitter beaconing, low volume → C2. The destination-count
+    #    clause only applies when IPs exist; without them, regularity + low
+    #    volume is all we legitimately have.
     if 5 <= flow_count <= 60 and iat_mean > 0 and (iat_std / max(iat_mean, 1e-9)) < 0.25 \
-            and f.get("unique_dst_ips", 0) <= 3:
+            and (not has_ip or n_dst <= 3):
         return "Command & Control"
-    # 5) many internal endpoints talking to each other → lateral movement
-    if east_west >= 3 and flow_count >= 6:
+    # 5) many internal endpoints talking to each other → lateral movement.
+    #    Requires IP features; abstains without them (see docstring).
+    #    TODO after the clean retrain: add a `lateral_port_share` window feature
+    #    over {135,139,445,3389,5985,5986} (SMB/RPC/RDP/WinRM) so this rule has
+    #    an IP-free basis. Needs a feature change, so it waits for Gate 2.
+    if has_ip and min(n_src, n_dst) >= 3 and flow_count >= 6:
         return "Lateral Movement"
     # 6) huge outbound transfer with few flows → bulk exfiltration
     if p99_bytes > 0 and bytes_total > p99_bytes:
@@ -120,7 +140,15 @@ def validate_rules(windows: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
     feats = ["flow_count", "syn_ratio", "unique_dst_ports", "auth_port_share",
              "unique_src_ips", "unique_dst_ips", "bytes_total", "pkts_total",
              "iat_mean", "iat_std"]
-    pred = [rule_based_stage(row.to_dict(), p99b, p99p) for _, row in attack[feats].iterrows()]
+
+    # Detect ONCE on the whole frame: a per-row check would misread a quiet
+    # window as "no IP data" even when the dataset does have IP columns.
+    has_ip = bool(
+        (windows.get("unique_src_ips", pd.Series(dtype=float)).max() or 0) > 0
+        or (windows.get("unique_dst_ips", pd.Series(dtype=float)).max() or 0) > 0
+    )
+    pred = [rule_based_stage(row.to_dict(), p99b, p99p, has_ip=has_ip)
+            for _, row in attack[feats].iterrows()]
     idx = attack["dominant_stage_idx"].astype(int)
     label_stage = pd.Series(
         [STAGES[i] if 0 <= i < len(STAGES) else "unknown" for i in idx],
@@ -131,6 +159,11 @@ def validate_rules(windows: pd.DataFrame, verbose: bool = True) -> pd.DataFrame:
         # full-width print — truncated crosstabs hide whole predicted classes
         with pd.option_context("display.max_columns", None, "display.width", 200):
             print("\nRule-engine validation (rows=label stage, cols=predicted):\n", ct)
+            if not has_ip:
+                print("\nNOTE: no IP-derived signal in this data (Src IP/Dst IP absent from")
+                print("      CIC's ML-ready CSVs). The Lateral Movement rule ABSTAINS and the")
+                print("      C2 rule drops its destination-count clause. This is a documented")
+                print("      limitation, not a tuning failure — see battle plan §5.2.")
             empty_col = ct.get("", pd.Series(dtype=int))
             if len(empty_col):
                 print(f"\n({int(empty_col.sum())} attack windows matched NO rule — "

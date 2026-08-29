@@ -1,15 +1,26 @@
-# Core runtime (demo app + pipeline) — intentionally light
+# Core runtime — the pipeline, the benchmarks and the app in CACHED mode.
 pandas>=2.0
 numpy>=1.24
 scikit-learn>=1.3
-pyarrow>=14.0
+pyarrow>=14.0        # REQUIRED: windows.parquet is unreadable without it
 streamlit>=1.31
+fastapi>=0.110       # Next.js frontend backend (api/) — see scripts/start_demo.bat
+uvicorn>=0.29
+pydantic>=2.5
 PyYAML>=6.0
 tqdm>=4.66
 boto3>=1.28          # dataset S3 downloads only
 
-# --- Training extras (ML pair installs when starting model work) ---
-# torch>=2.1          # local CPU: pip install torch --index-url https://download.pytorch.org/whl/cpu
-# captum>=0.7         # integrated-gradients attribution
-# matplotlib>=3.7     # notebook plots
-# jupyter>=1.0
+# Model path: training + live inference + the WHY panel.
+# The app degrades to CACHED mode (real precomputed predictions) without these,
+# so a judge can still run the demo — but the repo should train out of the box.
+# Smaller download on CPU-only machines:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.1
+captum>=0.7
+
+# Notebooks only — NOT required to run the pipeline, models or app.
+# `jupyter` drags in ~40 packages (jupyterlab, notebook, nbconvert, ...), which
+# works against the offline-packaging test. Install on demand:
+#   pip install jupyter
+matplotlib>=3.7

@@ -1,1 +1,23 @@
-data
+# Raw dataset: ~2 GB of CSVs. Never commit — scripts/download_data.py fetches them.
+data/raw/
+data/tmp_smoke/
+
+# NOTE: data/processed/ and models/ ARE committed on purpose. They are small
+# (< 1 MB total) and they make the repo clone-and-run offline, which is both a
+# demo requirement and what the SIH deliverable asks for.
+
+__pycache__/
+*.py[cod]
+*.so
+
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# stray archive of the source tree — src/ is the single source of truth
+src.zip
+*.zip
+
+.DS_Store
+Thumbs.db

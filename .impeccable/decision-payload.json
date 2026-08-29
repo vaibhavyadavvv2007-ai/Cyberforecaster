@@ -1,0 +1,78 @@
+{
+  "title": "Choose the visual world",
+  "question": "The roll assigned Mimic Panel. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Mimic Panel",
+      "kicker": "THE ROLL",
+      "lineage": "industrial SCADA mimic panels and grid control rooms",
+      "thesis": "The network as a physical plant: kill-chain sections as mimic cells that light as the attack advances, the forecast as the plant's trend recorder with a red trip line.",
+      "palette": ["#14161a", "#e8e4d8", "#ffb020", "#ff4530"],
+      "materials": ["engraved legends", "anodized plates", "hairline channels", "lit indicator cells"],
+      "viewport": "One continuous panel bus: engraved scenario selector, the five ATT&CK cells with the current stage lit amber, the probability timeline drawn across the panel with the alert threshold as a physical trip line.",
+      "risk": "Reads retro-skeuomorphic when engraved detail beats data density.",
+      "raised": [
+        { "from": "challenger-seven-segment", "raise": "Absence drawn as deliberately as light: unlit sections are designed ghost states, and numeric readings swap instantly, segment-style, never tween." },
+        { "from": "challenger-streetwear", "raise": "Labels set square like stenciled crate plates: every panel zone carries its engraved literal name." },
+        { "from": "challenger-cloud-edge", "raise": "The text field stays achromatic; color lives only in lit cells and data traces, never in chrome." }
+      ]
+    },
+    {
+      "id": "model-pick",
+      "label": "Alert Bulletin",
+      "kicker": "IMPECCABLE'S PICK",
+      "lineage": "meteorological and seismological early-warning services",
+      "thesis": "The console as an official forecast bulletin: alert levels, probability cones, uncertainty bands - the visual language institutions built for exactly this job of saying what comes next.",
+      "palette": ["#101418", "#f2ede2", "#e0562e", "#2e6f8e"],
+      "materials": ["bulletin plates", "probability cones", "issued-stamp typography"],
+      "viewport": "A numbered bulletin sheet: issued-time header, the probability cone as the hero graphic, alert level as a stamped severity band.",
+      "risk": "The most intuitive fit for a forecasting product - also the direction most runs in this category land on."
+    },
+    {
+      "id": "challenger-seven-segment",
+      "label": "Segment Display",
+      "verdict": "competitive",
+      "lineage": "seven-segment alarm clocks, price totems, scoreboards",
+      "thesis": "Every reading in one eight-cell mask; unlit segments held as ghost cells and every change an instant segment swap.",
+      "palette": ["#0a0a0c", "#ff3b30", "#ffb020", "#2d3138"],
+      "materials": ["LED cells", "ghost segments", "matte bezels"],
+      "viewport": "Peak probability as four bedside-red digits over the timeline; the whole console a rigid mask of cells.",
+      "case": "Fuses cleanly - the peak readout and alert states map naturally to lit/ghost segments - but prose, tables and the ATT&CK chain lose clarity inside a segment mask.",
+      "risk": "Reads novelty when the mask constrains comprehension."
+    },
+    {
+      "id": "challenger-streetwear",
+      "label": "Quoted Labels",
+      "verdict": "declined",
+      "lineage": "industrial streetwear with zip-tie tags and hazard stripes",
+      "palette": ["#f4f4f0", "#111214", "#ff5c00"],
+      "materials": ["stockroom cotton", "hazard diagonals", "zip-tie tags"],
+      "case": "The register fights jury trust: hazard stripes and quoted caps read fashion, not operations.",
+      "kept": "Labels set square like stenciled crate plates - donated to the assigned direction."
+    },
+    {
+      "id": "challenger-cloud-edge",
+      "label": "Spectral Fringe",
+      "verdict": "declined",
+      "lineage": "iridescent cloud edges and droplet diffraction",
+      "palette": ["#f5f5f2", "#4a5560", "#8fb8a8"],
+      "materials": ["hairline spectral fringes", "wide margins"],
+      "case": "Pastel fringes read weather-poetry, not security operations; identification fails for a SOC audience.",
+      "kept": "Color confined to hairline data edges over an achromatic text field - donated to the assigned direction."
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "The dark SOC dashboard every security product ships: navy glassmorphism panels, neon green/red status, Inter type. Played straight, at full craft.",
+    "palette": ["#0b1220", "#22d3ee", "#4ade80", "#f87171"],
+    "materials": ["glass panels", "neon status dots", "dense grid"],
+    "viewport": "Familiar cockpit: sidebar, cards with glowing accents, chart on top.",
+    "risk": "Indistinguishable from every other security dashboard by design."
+  },
+  "steer": true
+}

@@ -1,0 +1,167 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+/*
+  CyberForecaster visual system — professional security analytics.
+  Dark and restrained; semantic color only: gray = neutral, amber =
+  forecast / attention, red = danger, green = healthy, blue = informational.
+  Inter carries the interface; JetBrains Mono appears only on technical
+  values (timestamps, IDs, feature names, metrics).
+*/
+@theme {
+  --color-bg: #0b0d10;        /* app background */
+  --color-surface: #11151a;   /* cards */
+  --color-surface-2: #161b21; /* elevated: inputs, table hover, wells */
+  --color-border: #232831;    /* hairlines */
+  --color-fg: #e6e8eb;        /* primary text */
+  --color-fg-2: #8b929d;      /* secondary text */
+  --color-fg-3: #5b6470;      /* faint: axis ticks, placeholders */
+
+  --color-amber: #f59e0b;     /* forecast / attention */
+  --color-red: #ef4444;       /* danger, threshold crossed */
+  --color-green: #22c55e;     /* healthy / live */
+  --color-blue: #3b82f6;      /* informational */
+
+  --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+/* monospace readouts — timestamps, IDs, feature names, metrics */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* small section label — the only sanctioned uppercase */
+.label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-fg-2);
+}
+
+/* results entrance — a quiet rise, nothing theatrical */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise-in {
+  animation: rise-in 0.3s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+}
+
+/* ---- production analytics tables ---- */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-fg-2);
+  text-align: right;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+.data-table td {
+  font-size: 13px;
+  color: var(--color-fg-2);
+  text-align: right;
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+.data-table th:first-child,
+.data-table td:first-child {
+  text-align: left;
+  padding-left: 16px;
+}
+.data-table th:last-child,
+.data-table td:last-child {
+  padding-right: 16px;
+}
+.data-table td.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-fg);
+}
+.data-table td.rowhead {
+  color: var(--color-fg);
+  font-weight: 500;
+}
+.data-table thead tr {
+  border-bottom: 1px solid var(--color-border);
+}
+.data-table tbody tr {
+  border-bottom: 1px solid rgba(35, 40, 49, 0.6);
+}
+.data-table tbody tr:last-child {
+  border-bottom: none;
+}
+.data-table tbody tr:hover {
+  background: rgba(22, 27, 33, 0.6);
+}
+
+/* ---- threshold slider ---- */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--color-border);
+  outline-offset: 4px;
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-fg);
+  border: none;
+  cursor: pointer;
+}
+.range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-fg);
+  border: none;
+  cursor: pointer;
+}

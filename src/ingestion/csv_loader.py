@@ -17,12 +17,20 @@ import pandas as pd
 BENIGN = "Benign"
 
 # Columns the window builder actually consumes. Files may contain more; we keep
-# only these so memory stays sane. Missing columns degrade gracefully.
+# only these so memory stays sane. Missing columns degrade gracefully — and
+# build_windows() now reports which features got zero-filled as a result.
+#
+# VERIFIED against the real bucket header 2026-08-28:
+#   - the average-packet-size column is "Pkt Size Avg", NOT "Avg Pkt Size".
+#     The old name silently zero-filled avg_pkt_size for every window.
+#   - "Src IP" / "Dst IP" / "Src Port" are genuinely ABSENT from these
+#     ML-ready CSVs (battle plan §5.2). They stay listed so the degradation is
+#     explicit rather than forgotten.
 CORE_COLS = [
     "Timestamp", "Label",
     "Dst Port", "Protocol", "Flow Duration",
     "Tot Fwd Pkts", "Tot Bwd Pkts", "TotLen Fwd Pkts", "TotLen Bwd Pkts",
-    "Flow IAT Mean", "Flow IAT Std", "Avg Pkt Size", "Down/Up Ratio",
+    "Flow IAT Mean", "Flow IAT Std", "Pkt Size Avg", "Down/Up Ratio",
     "FIN Flag Cnt", "SYN Flag Cnt", "RST Flag Cnt", "PSH Flag Cnt", "ACK Flag Cnt",
     "Src IP", "Src Port", "Dst IP",
 ]
@@ -33,7 +41,10 @@ def _canonical_label(raw: str) -> str:
     s = " ".join(str(raw).split()).lower()
     if s.startswith("benign"):
         return BENIGN
-    if "infiltration" in s:
+    # NOTE: the dataset misspells this "Infilteration" (verified in the real
+    # Feb-28/Mar-01 files) — match on the stem so both spellings canonicalize.
+    # Unmapped, these 161k flows would lose their Lateral Movement stage label.
+    if "infil" in s:
         return "Infiltration"
     if "heartbleed" in s:
         return "Heartbleed"

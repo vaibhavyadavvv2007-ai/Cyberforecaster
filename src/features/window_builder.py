@@ -29,9 +29,10 @@ WINDOW_FEATURES = [
 
 
 def _entropy(counts: np.ndarray) -> float:
-    if counts.size == 0:
+    if counts.size == 0 or counts.sum() <= 0:
         return 0.0
-    p = counts / counts.sum()
+    with np.errstate(divide="ignore", invalid="ignore"):
+        p = counts / counts.sum()
     p = p[p > 0]
     return float(-(p * np.log2(p)).sum())
 
@@ -50,10 +51,23 @@ def build_windows(flows: pd.DataFrame, bin_secs: int = 60) -> pd.DataFrame:
 
     w["flow_count"] = g.size().astype(float)
 
+    # Track columns we had to zero-fill. A feature that silently reads 0.0 for
+    # every window is worse than a crash: it looks like a real input, trains a
+    # useless weight, and shows up in the WHY panel as "unimportant". That is
+    # exactly how `avg_pkt_size` stayed dead (the column is "Pkt Size Avg").
+    zero_filled: list[str] = []
+
     def _sum(col: str) -> pd.Series:
-        return g[col].sum() if col in df.columns else pd.Series(0.0, index=w.index)
+        if col in df.columns:
+            return g[col].sum()
+        zero_filled.append(col)
+        return pd.Series(0.0, index=w.index)
+
     def _mean(col: str) -> pd.Series:
-        return g[col].mean() if col in df.columns else pd.Series(0.0, index=w.index)
+        if col in df.columns:
+            return g[col].mean()
+        zero_filled.append(col)
+        return pd.Series(0.0, index=w.index)
 
     w["bytes_total"] = _sum("TotLen Fwd Pkts") + _sum("TotLen Bwd Pkts")
     w["pkts_total"] = _sum("Tot Fwd Pkts") + _sum("Tot Bwd Pkts")
@@ -91,8 +105,12 @@ def build_windows(flows: pd.DataFrame, bin_secs: int = 60) -> pd.DataFrame:
 
     w["iat_mean"] = _mean("Flow IAT Mean") / 1e6  # µs → s
     w["iat_std"] = _mean("Flow IAT Std") / 1e6
-    w["avg_pkt_size"] = _mean("Avg Pkt Size")
+    w["avg_pkt_size"] = _mean("Pkt Size Avg")
     w["down_up_ratio"] = _mean("Down/Up Ratio")
+
+    if zero_filled:
+        print(f"  WARNING: columns absent from input, features zero-filled: "
+              f"{sorted(set(zero_filled))}")
 
     # ---- supervision columns (never model inputs) ----
     w["attack_frac"] = g["is_attack"].mean()
@@ -121,8 +139,17 @@ def make_sequences(windows: pd.DataFrame,
                    seq_len: int = SEQ_LEN, horizon: int = HORIZON):
     """Sliding sequences over window features.
 
-    Returns X (n, L, F) float32, y_prog (n,) binary, y_stage (n,) int (-1 = none),
-    and end-index of each sequence's horizon for chronological splitting.
+    Returns X (n, L, F) float32, y_prog (n, K) binary, y_stage (n,) int
+    (-1 = none), and end-index of each sequence's horizon for chronological
+    splitting.
+
+    y_prog is PER HORIZON STEP: y_prog[i, k] = 1 iff window t+k+1 contains
+    attack activity. This is what makes the K outputs a forecast trajectory
+    rather than one number copied K times — collapsing the horizon to a single
+    `(hz > 0).any()` bool (as this did originally) trains all K heads on an
+    identical target, so the predicted curve is mathematically flat and the
+    "risk trajectory" claim is unsupportable. Use `horizon_any()` when you
+    genuinely need the old "attack anywhere in horizon" label.
     """
     feats = windows[WINDOW_FEATURES].to_numpy(dtype=np.float32)
     attack_frac = windows["attack_frac"].to_numpy(dtype=np.float32)
@@ -132,14 +159,24 @@ def make_sequences(windows: pd.DataFrame,
     for i in range(len(windows) - seq_len - horizon + 1):
         xs.append(feats[i:i + seq_len])
         hz = attack_frac[i + seq_len:i + seq_len + horizon]
-        ys_prog.append(float((hz > 0).any()))
+        ys_prog.append((hz > 0).astype(np.float32))       # (K,) per-step labels
         hz_stage = stage[i + seq_len:i + seq_len + horizon]
         valid = [s for s in hz_stage if s >= 0]
         # dominant stage over horizon = most frequent among horizon windows
         ys_stage.append(int(np.bincount(valid, minlength=len(STAGES)).argmax()) if valid else -1)
         ends.append(i + seq_len + horizon)
-    return (np.stack(xs), np.array(ys_prog, dtype=np.float32),
+    return (np.stack(xs), np.stack(ys_prog),
             np.array(ys_stage, dtype=np.int64), np.array(ends))
+
+
+def horizon_any(y_prog: np.ndarray) -> np.ndarray:
+    """(n, K) per-step labels → (n,) 'attack anywhere in horizon'.
+
+    The single-number summary used for the headline benchmark row. Kept as one
+    function so every model reports the same aggregate.
+    """
+    y = np.asarray(y_prog)
+    return (y.max(axis=1) > 0).astype(np.float32) if y.ndim > 1 else (y > 0).astype(np.float32)
 
 
 def chrono_split(windows: pd.DataFrame, ends: np.ndarray,

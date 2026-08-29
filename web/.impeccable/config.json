@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "codex-grid-background",
+        "value": "*",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-29T12:49:17.064Z",
+        "reason": "designer decision: the flagged grid is .chart-paper, used only on the TrendRecorder strip-chart canvas — an actual measurement surface, the rule's own sanctioned exception"
+      }
+    ]
+  }
+}
