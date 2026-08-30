@@ -5,7 +5,7 @@ import { api, type Forecast, type RiskLevel, type Scenario, type Timeline } from
 import { AttackProgression } from "@/components/AttackProgression";
 import { ForecastChart } from "@/components/ForecastChart";
 import { WhyPrediction } from "@/components/WhyPrediction";
-import { Badge, type Tone } from "@/components/ui";
+import { Badge, PeakGauge, type Tone } from "@/components/ui";
 
 const RISK_TONE: Record<RiskLevel, Tone> = {
   HIGH: "red",
@@ -89,63 +89,61 @@ export default function ConsolePage() {
   const leadWindows = forecast?.crossing_step ?? 0;
 
   return (
-    <div className="space-y-4">
-      {/* ---- control bar ---- */}
-      <section className="rounded-lg border border-border bg-surface p-5">
-        <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
-          <div className="min-w-[280px] flex-1">
-            <label htmlFor="scenario" className="label mb-1.5 block">
-              Scenario
-            </label>
-            <select
-              id="scenario"
-              value={scenarioId}
-              onChange={(e) => setScenarioId(e.target.value)}
-              className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-blue"
-            >
-              {scenarios.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            {scenario && (
-              <p className="mt-1.5 text-xs text-fg-2">{KIND_NOTE[scenario.kind]}</p>
-            )}
-          </div>
-
-          <div className="w-56">
-            <label htmlFor="threshold" className="label mb-1.5 block">
-              Alert threshold
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                id="threshold"
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={threshold}
-                onChange={(e) => setThreshold(Number(e.target.value))}
-                className="range flex-1"
-              />
-              <span className="mono w-10 text-right text-sm text-fg">
-                {(threshold * 100).toFixed(0)}%
-              </span>
-            </div>
-            <p className="mt-1.5 text-xs text-fg-2">
-              Default {defaultThreshold.toFixed(2)}, tuned on validation data
-            </p>
-          </div>
-
-          <button
-            onClick={analyze}
-            disabled={busy || !scenarioId}
-            className="rounded-md bg-amber px-5 py-2.5 text-sm font-semibold text-bg transition-colors hover:bg-amber/90 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+    <div className="space-y-6">
+      {/* ---- command bar (not a card: controls sit on the ground) ---- */}
+      <section className="flex flex-wrap items-end gap-x-8 gap-y-4 border-b border-border pb-5">
+        <div className="min-w-[280px] flex-1">
+          <label htmlFor="scenario" className="label mb-1.5 block">
+            Scenario
+          </label>
+          <select
+            id="scenario"
+            value={scenarioId}
+            onChange={(e) => setScenarioId(e.target.value)}
+            className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-fg outline-none transition-colors focus:border-blue"
           >
-            {busy ? "Forecasting…" : "Run forecast"}
-          </button>
+            {scenarios.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          {scenario && (
+            <p className="mt-1.5 text-xs text-fg-2">{KIND_NOTE[scenario.kind]}</p>
+          )}
         </div>
+
+        <div className="w-56">
+          <label htmlFor="threshold" className="label mb-1.5 block">
+            Alert threshold
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              id="threshold"
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value))}
+              className="range flex-1"
+            />
+            <span className="mono w-10 text-right text-sm text-fg">
+              {(threshold * 100).toFixed(0)}%
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs text-fg-2">
+            Default {defaultThreshold.toFixed(2)}, tuned on validation data
+          </p>
+        </div>
+
+        <button
+          onClick={analyze}
+          disabled={busy || !scenarioId}
+          className="rounded-md bg-amber px-5 py-2.5 text-sm font-semibold text-bg transition-colors hover:bg-amber/90 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? "Forecasting…" : "Run forecast"}
+        </button>
       </section>
 
       {error && (
@@ -176,11 +174,11 @@ export default function ConsolePage() {
       )}
 
       {forecast && (
-        <div key={forecast.scenario_id + threshold} className="rise-in space-y-4">
+        <div key={forecast.scenario_id + threshold} className="rise-in space-y-6">
           {/* ---- primary prediction ---- */}
           <section className="rounded-lg border border-border bg-surface">
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-border px-5 py-3.5">
-              <h2 className="text-[15px] font-semibold text-fg">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-border px-6 py-3.5">
+              <h2 className="text-[15px] font-semibold tracking-tight text-fg">
                 Attack progression forecast
               </h2>
               <span className="mono text-xs text-fg-2">
@@ -188,32 +186,35 @@ export default function ConsolePage() {
               </span>
             </div>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_auto]">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 p-5">
-                <div>
-                  <div className="text-5xl font-semibold tabular-nums text-fg">
+            <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+              <div className="p-6">
+                <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                  <div
+                    className={`text-[72px] font-semibold leading-none tracking-[-0.02em] tabular-nums ${
+                      tripped ? "text-red" : "text-fg"
+                    }`}
+                  >
                     {(forecast.peak * 100).toFixed(0)}
-                    <span className="text-2xl text-fg-2">%</span>
+                    <span className="align-top text-3xl font-medium text-fg-2">%</span>
                   </div>
-                  <div className="mt-1.5 text-sm text-fg-2">
-                    Probability of attack progression
-                  </div>
-                  <div className="text-xs text-fg-3">
-                    peak over next {forecast.probs.length} windows
-                  </div>
-                </div>
-                <div>
-                  <div className="label mb-1.5">Risk</div>
-                  <Badge tone={RISK_TONE[forecast.level]} className="px-3 py-1 text-sm">
-                    {forecast.level}
-                  </Badge>
-                  <div className="mt-1.5 text-xs text-fg-3">
-                    threshold {(forecast.threshold * 100).toFixed(0)}%
+                  <div className="pb-1.5">
+                    <Badge
+                      tone={RISK_TONE[forecast.level]}
+                      className="px-3 py-1 text-sm"
+                    >
+                      {forecast.level} risk
+                    </Badge>
                   </div>
                 </div>
+                <p className="mt-3 text-sm text-fg-2">
+                  Probability of attack progression
+                  {forecast.stage ? ` to ${forecast.stage}` : ""} — peak over
+                  the next {forecast.probs.length} windows
+                </p>
+                <PeakGauge peak={forecast.peak} threshold={forecast.threshold} className="mt-4 max-w-md" />
               </div>
 
-              <div className="grid grid-cols-1 border-t border-border sm:grid-cols-3 lg:border-l lg:border-t-0">
+              <div className="grid grid-cols-1 divide-y divide-border border-t border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0 lg:border-l lg:border-t-0">
                 <SecondaryMetric
                   label="Predicted stage"
                   value={forecast.stage || "-"}

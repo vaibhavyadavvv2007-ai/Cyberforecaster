@@ -1,0 +1,21 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "CyberForecaster" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e10]:
+        - link "Forecast" [ref=e11] [cursor=pointer]:
+          - /url: /
+        - link "Live" [ref=e12] [cursor=pointer]:
+          - /url: /live
+        - link "Benchmarks" [ref=e13] [cursor=pointer]:
+          - /url: /benchmarks
+      - generic [ref=e14]: Connecting
+  - main [ref=e18]:
+    - generic [ref=e21]:
+      - generic [ref=e24]:
+        - generic [ref=e25]: Capture stopped
+        - generic [ref=e26]: Start capture to monitor this machine's network in real time
+      - button "Start live capture" [ref=e28]
+  - contentinfo [ref=e29]:
+    - paragraph [ref=e30]: Forecasts are decision support, not automated blocking · SIH26153 prototype · offline demo

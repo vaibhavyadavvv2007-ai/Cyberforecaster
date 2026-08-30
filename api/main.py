@@ -18,6 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from api.live_state import live_service
+from src.live.sensor import list_interfaces  # noqa: E402
 from api.schemas import (AttributionItem, ForecastRequest, ForecastResponse,   # noqa: E402
                          HealthResponse, ScenarioOut, TimelinePoint,
                          TimelineResponse)
@@ -181,6 +183,47 @@ def flagged(limit: int = 15) -> dict:
     # and turns NaN into null in one step.
     return {"total_flagged": int(len(fw)), "total_windows": int(len(w)),
             "rows": json.loads(rows.to_json(orient="records"))}
+
+
+# ---- live traffic monitoring (demo day: real packets → real forecasts) ----
+from pydantic import BaseModel  # noqa: E402
+
+
+class LiveStartRequest(BaseModel):
+    iface: str | None = None     # None = scapy default (usually the right one)
+    use_seed: bool = True        # pre-seed history with recorded benign windows
+
+
+@app.get("/api/live/status")
+def live_status() -> dict:
+    svc = live_service
+    feed = svc.feed()
+    return {k: feed[k] for k in ("sensor", "bin_secs", "seq_len", "n_seed",
+                                 "n_live", "ready", "events")}
+
+
+@app.post("/api/live/start")
+def live_start(req: LiveStartRequest) -> dict:
+    """Start packet capture. Requires Npcap; the response names the failure
+    if it is missing (never a silent simulated capture)."""
+    return live_service.start(iface=req.iface, use_seed=req.use_seed)
+
+
+@app.post("/api/live/stop")
+def live_stop() -> dict:
+    return live_service.stop()
+
+
+@app.get("/api/live/feed")
+def live_feed() -> dict:
+    """Everything the Live page renders, one poll. The frontend calls this
+    every few seconds; each call also drains any finalized 30s window."""
+    return live_service.feed()
+
+
+@app.get("/api/live/interfaces")
+def live_interfaces() -> dict:
+    return {"interfaces": list_interfaces()}
 
 
 # ---------------------------------------------------------------- helpers

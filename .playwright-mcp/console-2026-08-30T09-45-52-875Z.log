@@ -1,0 +1,7 @@
+[     114ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/chunks/main-app.js?v=1788083152901:0
+[     121ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/chunks/app-pages-internals.js:0
+[     150ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/media/inter-latin-wght-normal.6c596dfc.woff2:0
+[     153ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/media/jetbrains-mono-latin-500-normal.af2e87f5.woff2:0
+[     157ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/media/jetbrains-mono-latin-400-normal.db9d659a.woff2:0
+[     172ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/media/jetbrains-mono-latin-500-normal.24c9023a.woff:0
+[     175ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/_next/static/media/jetbrains-mono-latin-400-normal.b0c7be19.woff:0

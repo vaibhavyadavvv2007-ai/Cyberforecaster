@@ -4,31 +4,207 @@
   "title": "Design System: CyberForecaster",
   "extensions": {
     "colorMeta": {
-      "primary": { "role": "primary", "displayName": "Amber", "canonical": "#f59e0b", "tonalRamp": ["#1c1206", "#38230b", "#55340f", "#714413", "#8d5517", "#a9661b", "#d08610", "#f59e0b"] },
-      "danger": { "role": "secondary", "displayName": "Red", "canonical": "#ef4444", "tonalRamp": ["#2a0d0d", "#4a1414", "#6a1c1c", "#8a2323", "#aa2b2b", "#ca3333", "#ea3b3b", "#ef4444"] },
-      "success": { "role": "secondary", "displayName": "Green", "canonical": "#22c55e", "tonalRamp": ["#08210f", "#0e4220", "#146331", "#1a8442", "#20a553", "#22c55e", "#4cd375", "#7fe19b"] },
-      "info": { "role": "secondary", "displayName": "Blue", "canonical": "#3b82f6", "tonalRamp": ["#0c1a33", "#122552", "#183471", "#1e4390", "#2452af", "#3b82f6", "#6ba3f8", "#9bc4fa"] },
-      "background": { "role": "neutral", "displayName": "Background", "canonical": "#0b0d10", "tonalRamp": ["#060709", "#0b0d10", "#13161b", "#1b1f26", "#232831", "#2b313c", "#333a46", "#3b4351"] },
-      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "#11151a", "tonalRamp": ["#0a0d10", "#11151a", "#191e25", "#212730", "#29303b", "#313947", "#394253", "#414b5f"] },
-      "surface-2": { "role": "neutral", "displayName": "Elevated Surface", "canonical": "#161b21", "tonalRamp": ["#0d1014", "#161b21", "#1e242c", "#262e38", "#2e3743", "#36414f", "#3e4a5b", "#465367"] },
-      "border": { "role": "neutral", "displayName": "Border", "canonical": "#232831", "tonalRamp": ["#12151b", "#232831", "#343b48", "#454e5f", "#566377", "#677890", "#788da9", "#89a2c2"] },
-      "text-primary": { "role": "neutral", "displayName": "Text", "canonical": "#e6e8eb", "tonalRamp": ["#1d1e20", "#3b3c3f", "#595a5e", "#77787d", "#95969c", "#b3b4ba", "#d1d2d8", "#e6e8eb"] },
-      "text-secondary": { "role": "neutral", "displayName": "Text Secondary", "canonical": "#8b929d", "tonalRamp": ["#121417", "#242730", "#363a48", "#484e60", "#5b6278", "#6e778f", "#8b929d", "#a9b0bc"] },
-      "text-faint": { "role": "neutral", "displayName": "Text Faint", "canonical": "#5b6470", "tonalRamp": ["#0d0f11", "#1a1d21", "#272b32", "#5b6470", "#6e7885", "#818c9a", "#95a1b0", "#a9b6c6"] }
+      "primary": {
+        "role": "primary",
+        "displayName": "Amber",
+        "canonical": "#ffb224",
+        "tonalRamp": [
+          "#3f2c09",
+          "#5b3f0c",
+          "#765210",
+          "#916514",
+          "#ad7818",
+          "#c88b1c",
+          "#e39e20",
+          "#ffb224"
+        ]
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "Red",
+        "canonical": "#ff6a5f",
+        "tonalRamp": [
+          "#3f1a17",
+          "#5b2521",
+          "#76312c",
+          "#913c36",
+          "#ad4740",
+          "#c8534a",
+          "#e35e54",
+          "#ff6a5f"
+        ]
+      },
+      "success": {
+        "role": "secondary",
+        "displayName": "Green",
+        "canonical": "#43d97b",
+        "tonalRamp": [
+          "#10361e",
+          "#174d2b",
+          "#1f6439",
+          "#267c46",
+          "#2d9353",
+          "#34aa60",
+          "#3bc16d",
+          "#43d97b"
+        ]
+      },
+      "info": {
+        "role": "secondary",
+        "displayName": "Blue",
+        "canonical": "#6ea8fe",
+        "tonalRamp": [
+          "#1b2a3f",
+          "#273c5a",
+          "#334e75",
+          "#3e6091",
+          "#4a72ac",
+          "#5684c7",
+          "#6296e2",
+          "#6ea8fe"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Background",
+        "canonical": "#0a0e14",
+        "tonalRamp": [
+          "#020305",
+          "#030507",
+          "#040609",
+          "#05080b",
+          "#06090d",
+          "#070b0f",
+          "#080c11",
+          "#0a0e14"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#10151d",
+        "tonalRamp": [
+          "#040507",
+          "#05070a",
+          "#07090d",
+          "#090c10",
+          "#0a0e13",
+          "#0c1016",
+          "#0e1219",
+          "#10151d"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Elevated Surface",
+        "canonical": "#171f2b",
+        "tonalRamp": [
+          "#05070a",
+          "#080b0f",
+          "#0a0e13",
+          "#0d1118",
+          "#0f151d",
+          "#121821",
+          "#141b26",
+          "#171f2b"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Border",
+        "canonical": "#222d3f",
+        "tonalRamp": [
+          "#080b0f",
+          "#0c1016",
+          "#0f141d",
+          "#131924",
+          "#171e2a",
+          "#1a2331",
+          "#1e2838",
+          "#222d3f"
+        ]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Text",
+        "canonical": "#e9edf4",
+        "tonalRamp": [
+          "#3a3b3d",
+          "#535457",
+          "#6c6e71",
+          "#85878b",
+          "#9ea0a5",
+          "#b7babf",
+          "#d0d3d9",
+          "#e9edf4"
+        ]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Text Secondary",
+        "canonical": "#9fadbe",
+        "tonalRamp": [
+          "#272b2f",
+          "#383d43",
+          "#495058",
+          "#5a626c",
+          "#6b7580",
+          "#7c8795",
+          "#8d9aa9",
+          "#9fadbe"
+        ]
+      },
+      "text-faint": {
+        "role": "neutral",
+        "displayName": "Text Faint",
+        "canonical": "#6d7c92",
+        "tonalRamp": [
+          "#1b1f24",
+          "#262c34",
+          "#323943",
+          "#3e4653",
+          "#495463",
+          "#556172",
+          "#616e82",
+          "#6d7c92"
+        ]
+      }
     },
     "typographyMeta": {
-      "body": { "displayName": "Interface (Inter)", "purpose": "The entire interface: headings, labels, buttons, sentences, KPI values." },
-      "mono": { "displayName": "Technical (JetBrains Mono)", "purpose": "Machine-measured values only: timestamps, technique IDs, feature names, metrics, thresholds." },
-      "label": { "displayName": "Section Label", "purpose": "The only uppercase in the system: 11px field labels and table headers, used sparingly." }
+      "body": {
+        "displayName": "Interface (Inter)",
+        "purpose": "The entire interface: headings, labels, buttons, sentences, KPI values."
+      },
+      "mono": {
+        "displayName": "Technical (JetBrains Mono)",
+        "purpose": "Machine-measured values only: timestamps, technique IDs, feature names, metrics, thresholds."
+      },
+      "label": {
+        "displayName": "Section Label (JetBrains Mono)",
+        "purpose": "Mono uppercase 10px field labels and table headers - the instrument register."
+      }
     },
     "shadows": [],
     "motion": [
-      { "name": "rise-in", "value": "opacity 0 to 1, translateY 6px to 0, 0.3s ease-out", "purpose": "Results fade quietly into place; disabled under prefers-reduced-motion. Charts never animate." }
+      {
+        "name": "rise-in",
+        "value": "opacity 0 to 1, translateY 6px to 0, 0.3s ease-out",
+        "purpose": "Results fade quietly into place; disabled under prefers-reduced-motion. Charts never animate."
+      }
     ],
     "breakpoints": [
-      { "name": "sm", "value": "640px" },
-      { "name": "lg", "value": "1024px" },
-      { "name": "header-wrap", "value": "~660px" }
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "header-wrap",
+        "value": "~660px"
+      }
     ]
   },
   "components": [
@@ -85,7 +261,7 @@
       "kind": "custom",
       "refersTo": "badge-high",
       "description": "Precise, not theatrical: red-tinted banner that states the forecast, never a confirmed incident.",
-      "html": "<div class=\"ds-banner\"><p class=\"ds-banner-title\">Forecast threshold crossed</p><p class=\"ds-banner-body\">87% probability of attack progression to Lateral Movement within the forecast horizon.</p><p class=\"ds-banner-note\">Model forecast · not confirmed malicious activity · decision support only</p></div>",
+      "html": "<div class=\"ds-banner\"><p class=\"ds-banner-title\">Forecast threshold crossed</p><p class=\"ds-banner-body\">87% probability of attack progression to Lateral Movement within the forecast horizon.</p><p class=\"ds-banner-note\">Model forecast \u00b7 not confirmed malicious activity \u00b7 decision support only</p></div>",
       "css": ".ds-banner { display: flex; gap: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 16px; } .ds-banner-title { font-family: 'Inter', system-ui, sans-serif; font-size: 14px; font-weight: 600; color: #ef4444; margin: 0; } .ds-banner-body { font-family: 'Inter', system-ui, sans-serif; font-size: 14px; color: #e6e8eb; margin: 2px 0 0; } .ds-banner-note { font-family: 'Inter', system-ui, sans-serif; font-size: 12px; color: #8b929d; margin: 2px 0 0; }"
     },
     {
@@ -99,7 +275,7 @@
   ],
   "narrative": {
     "northStar": "The Analyst's Console",
-    "overview": "A professional security analytics product — the register of Datadog, Grafana and Linear, with a subtle cybersecurity identity. The screen answers one question within seconds: what does the model think will happen? Everything else (chart, ATT&CK progression, attribution, benchmarks) is supporting evidence, deliberately quieter than the prediction it supports. The world is dark, dense but calm, and semantic in its color: gray for neutral chrome, amber for forecast, red for danger, green for healthy, blue for informational. Decoration carries no information — no corner brackets, scanlines, terminal framing or glow. Hierarchy comes from type scale, spacing and color semantics. Fonts are self-hosted (the demo runs offline), and every number is served from the local API.",
+    "overview": "A professional security analytics product \u2014 the register of Datadog, Grafana and Linear, with a subtle cybersecurity identity. The screen answers one question within seconds: what does the model think will happen? Everything else (chart, ATT&CK progression, attribution, benchmarks) is supporting evidence, deliberately quieter than the prediction it supports. The world is dark, dense but calm, and semantic in its color: gray for neutral chrome, amber for forecast, red for danger, green for healthy, blue for informational. Decoration carries no information \u2014 no corner brackets, scanlines, terminal framing or glow. Hierarchy comes from type scale, spacing and color semantics. Fonts are self-hosted (the demo runs offline), and every number is served from the local API.",
     "keyCharacteristics": [
       "Inter for the entire interface; JetBrains Mono only for timestamps, IDs, feature names, metrics and thresholds",
       "Sentence case everywhere; uppercase survives only as 11px section labels",
@@ -108,10 +284,26 @@
       "The honesty contract (model status: live / cached / simulated) always visible in the header"
     ],
     "rules": [
-      { "name": "The Semantic Color Rule", "body": "Every use of amber/red/green/blue must map to its meaning (forecast / danger / healthy / informational). If a color cannot state its semantics, it is decoration and comes out.", "section": "colors" },
-      { "name": "The Status Pill Rule", "body": "The model status pill is the only place where a colored dot asserts data provenance. Risk level is text plus tinted badge — states must read through text, not color alone.", "section": "colors" },
-      { "name": "The Mono-Is-Technical Rule", "body": "Monospace marks a value as machine-measured. Words a human wrote (heading, label, button, sentence) are Inter; numbers an instrument produced are JetBrains Mono.", "section": "typography" },
-      { "name": "The Prediction-First Rule", "body": "The prediction card is the visually dominant element on the console; every other section supports it and stays quieter.", "section": "layout" }
+      {
+        "name": "The Semantic Color Rule",
+        "body": "Every use of amber/red/green/blue must map to its meaning (forecast / danger / healthy / informational). If a color cannot state its semantics, it is decoration and comes out.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Pill Rule",
+        "body": "The model status pill is the only place where a colored dot asserts data provenance. Risk level is text plus tinted badge \u2014 states must read through text, not color alone.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono-Is-Technical Rule",
+        "body": "Monospace marks a value as machine-measured. Words a human wrote (heading, label, button, sentence) are Inter; numbers an instrument produced are JetBrains Mono.",
+        "section": "typography"
+      },
+      {
+        "name": "The Prediction-First Rule",
+        "body": "The prediction card is the visually dominant element on the console; every other section supports it and stays quieter.",
+        "section": "layout"
+      }
     ],
     "dos": [
       "Do make the prediction visually dominant; everything else supports it.",

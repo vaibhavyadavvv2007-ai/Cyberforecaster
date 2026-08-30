@@ -15,11 +15,11 @@ function LogoMark() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
       <rect x="0.75" y="0.75" width="20.5" height="20.5" rx="6"
-            fill="#11151a" stroke="#232831" strokeWidth="1.5" />
+            fill="#10151d" stroke="#222d3f" strokeWidth="1.5" />
       <path d="M4 14.5 L8.5 11 L12 12.5 L18 6.5"
-            fill="none" stroke="#f59e0b" strokeWidth="2"
+            fill="none" stroke="#ffb224" strokeWidth="2"
             strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="18" cy="6.5" r="2" fill="#f59e0b" />
+      <circle cx="18" cy="6.5" r="2" fill="#ffb224" />
     </svg>
   );
 }

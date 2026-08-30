@@ -2,17 +2,17 @@
 name: CyberForecaster
 description: Attack-progression forecasting console styled as a professional security analytics product (Datadog/Grafana/Linear register).
 colors:
-  primary: "#f59e0b"          # amber — forecast / attention
-  danger: "#ef4444"           # red — threshold crossed / errors
-  success: "#22c55e"          # green — healthy / live model
-  info: "#3b82f6"             # blue — informational (attribution)
-  background: "#0b0d10"
-  surface: "#11151a"
-  surface-2: "#161b21"
-  border: "#232831"
-  text-primary: "#e6e8eb"
-  text-secondary: "#8b929d"
-  text-faint: "#5b6470"
+  primary: "#ffb224"          # amber — forecast / attention
+  danger: "#ff6a5f"           # red — threshold crossed / errors
+  success: "#43d97b"          # green — healthy / live model
+  info: "#6ea8fe"             # blue — informational (attribution)
+  background: "#0a0e14"
+  surface: "#10151d"
+  surface-2: "#171f2b"
+  border: "#222d3f"
+  text-primary: "#e9edf4"
+  text-secondary: "#9fadbe"
+  text-faint: "#6d7c92"
 typography:
   body:
     fontFamily: "Inter Variable, Inter, system-ui, sans-serif"
@@ -26,20 +26,29 @@ typography:
     letterSpacing: "normal"
     textTransform: "none"
   label:
-    fontFamily: "Inter Variable, Inter, system-ui, sans-serif"
-    fontSize: "11px"
+    fontFamily: "JetBrains Mono, ui-monospace, monospace"
+    fontSize: "10px"
     fontWeight: 500
-    letterSpacing: "0.05em"
+    letterSpacing: "0.1em"
     textTransform: "uppercase"
   mono:
     fontFamily: "JetBrains Mono, ui-monospace, monospace"
     fontSize: "12-13px"
     fontWeight: 400
     fontFeature: "tnum"
+  table-cell:
+    fontFamily: "Inter Variable, Inter, system-ui, sans-serif"
+    fontSize: "13px"
+    fontWeight: 400
+  hero:
+    fontFamily: "Inter Variable, Inter, system-ui, sans-serif"
+    fontSize: "72px"
+    fontWeight: 600
+    letterSpacing: "-0.02em"
 rounded:
   card: "8px"      # rounded-lg
   control: "6px"   # rounded-md (buttons, inputs, badges)
-  bar: "full"
+  bar: "9999px"    # full pill — bar/badge/gauge tracks, slider/scrollbar thumbs
 spacing:
   xs: "4px"
   sm: "8px"
@@ -63,9 +72,9 @@ components:
     rounded: "{rounded.control}"
     padding: "8px 12px"
   badge-high:
-    backgroundColor: "rgba(239,68,68,0.1)"
+    backgroundColor: "rgba(255,106,95,0.1)"
     textColor: "{colors.danger}"
-    borderColor: "rgba(239,68,68,0.25)"
+    borderColor: "rgba(255,106,95,0.25)"
     rounded: "{rounded.control}"
 ---
 
@@ -91,8 +100,8 @@ scale, spacing and color semantics, not effects. Fonts are self-hosted
 local API.
 
 **Key Characteristics:**
-- Inter for the entire interface; JetBrains Mono only for timestamps, IDs, feature names, metrics and thresholds
-- Sentence case everywhere; uppercase survives only as 11px section labels
+- Inter for the interface; JetBrains Mono for timestamps, IDs, feature names, metrics, thresholds and section labels
+- Sentence case everywhere; uppercase survives only as 10px mono section labels
 - Semantic color discipline: amber = forecast/attention, red = danger, green = healthy, blue = informational
 - Subtle 1px borders, 8px card radius, 6px control radius; no glows, no gradients-as-decoration
 - The honesty contract (model status: live / cached / simulated) always visible in the header
@@ -100,21 +109,21 @@ local API.
 ## Colors
 
 ### Semantic
-- **Amber** (#f59e0b): the forecast identity — primary action, forecast
+- **Amber** (#ffb224): the forecast identity — primary action, forecast
   line, ELEVATED risk, predicted-stage highlight. Used sparingly.
-- **Red** (#ef4444): danger only — threshold-crossed banner, HIGH risk,
+- **Red** (#ff6a5f): danger only — threshold-crossed banner, HIGH risk,
   error states, alert-threshold line. Never decorative.
-- **Green** (#22c55e): healthy — live-model status dot, LOW risk.
-- **Blue** (#3b82f6): informational — attribution bars, focus-visible rings.
+- **Green** (#43d97b): healthy — live-model status dot, LOW risk.
+- **Blue** (#6ea8fe): informational — attribution bars, focus-visible rings.
 
 ### Neutral
-- **Background** (#0b0d10): page ground.
-- **Surface** (#11151a): cards.
-- **Surface-2** (#161b21): elevated wells — inputs, table hover, bar tracks.
-- **Border** (#232831): all hairlines.
-- **Text** (#e6e8eb): primary text.
-- **Text-2** (#8b929d): secondary text (contrast ≥ 4.6:1 on surface).
-- **Text-3** (#5b6470): faint — axis ticks, footnotes. Never primary copy.
+- **Background** (#0a0e14): page ground.
+- **Surface** (#10151d): cards.
+- **Surface-2** (#171f2b): elevated wells — inputs, table hover, bar tracks.
+- **Border** (#222d3f): all hairlines.
+- **Text** (#e9edf4): primary text.
+- **Text-2** (#9fadbe): secondary text (contrast ≥ 7:1 on surface).
+- **Text-3** (#6d7c92): faint — axis ticks, footnotes (≥ 4.5:1 on surface). Never primary copy.
 
 ### Named Rules
 **The Semantic Color Rule.** Every use of amber/red/green/blue must map to
@@ -133,13 +142,14 @@ through text, not color alone.
 ### Hierarchy
 - **Page title** (600, 20px, sentence case): "Benchmarks".
 - **Card title** (600, 15px, sentence case): every section header sits in the card's header strip.
-- **Section label** (500, 11px, 0.05em tracking, uppercase): the only
-  uppercase in the system — small field labels and table headers, used sparingly.
+- **Section label** (JetBrains Mono 500, 10px, 0.1em tracking, uppercase):
+  small field labels and table headers — the instrument register.
 - **Body** (400, 14px, 1.5): all explanatory copy.
 - **Mono readout** (400, 12–13px, tabular-nums): timestamps, technique IDs,
   feature names, metric values, thresholds — never headings, nav or buttons.
-- **Hero number** (600, 48px, tabular-nums, Inter): the peak probability —
-  the single dominant element on the console.
+- **Hero number** (600, 72px, -0.02em tracking, tabular-nums, Inter): the
+  peak probability — the single dominant element on the console. Turns red
+  when the threshold is crossed, with a peak-vs-threshold gauge beneath.
 
 ### Named Rules
 **The Mono-Is-Technical Rule.** Monospace marks a value as machine-measured.
@@ -149,12 +159,13 @@ is Inter. If it is a number an instrument produced, it is JetBrains Mono.
 ## Layout
 
 Single column inside max-w-6xl (72rem), px-6, 16px vertical rhythm
-(`space-y-4`). Reading order is the analyst's question order: sticky header
-(brand, nav, model status) → control bar (scenario, threshold, run) →
+(`space-y-6`). Reading order is the analyst's question order: sticky header
+(brand, nav, model status) → command bar (scenario, threshold, run —
+controls sit on the ground, not in a card) →
 prediction card (hero) → threshold-crossed banner (when tripped) → chart →
 ATT&CK progression + attribution side by side (`lg:grid-cols-2`).
 
-The prediction card is asymmetric on purpose: `lg:grid-cols-[minmax(0,1fr)_auto]`
+The prediction card is asymmetric on purpose: `lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]`
 gives the probability + risk badge the dominant left two-thirds, with
 predicted stage / lead time / threshold as three compact secondary metrics on
 a divider-separated rail. The header wraps (never truncates) below ~660px so
@@ -194,7 +205,7 @@ empty state uses a dashed border.
 
 ### Inputs
 - **Scenario select:** surface-2 ground, 6px radius, native chevron.
-- **Threshold slider:** 4px rounded track (border color), 14px round thumb,
+- **Threshold slider:** 4px rounded track (border color), 14px amber thumb,
   mono percentage beside it, one line of context under it.
 - **Focus:** blue 2px focus-visible ring globally; inputs shift border to
   blue on focus.
@@ -223,7 +234,7 @@ plain-language summary sentence derived from the actual top two features
 (never invented), and a one-line method footnote (Integrated Gradients).
 
 ### Tables
-`.data-table`: uppercase 11px headers, 13px cells, mono tabular numerals
+`.data-table`: mono uppercase 10px headers, 13px cells, mono tabular numerals
 right-aligned, hairline row separators, hover wash, first/last cell edge
 padding. The benchmarks page leads with summary cards, comparison bars and
 a horizon chart; exact tables stay below for inspection.
@@ -232,8 +243,8 @@ a horizon chart; exact tables stay below for inspection.
 
 ### Do:
 - **Do** make the prediction visually dominant; everything else supports it.
-- **Do** use sentence case; reserve uppercase for 11px section labels.
-- **Do** keep monospace for measured values only.
+- **Do** use sentence case; reserve uppercase for 10px mono section labels.
+- **Do** keep monospace for measured values and section labels.
 - **Do** distinguish model forecast from confirmed incident in every warning's copy.
 - **Do** serve every number from the API verbatim; keep observed vs forecast visually distinct in every chart.
 

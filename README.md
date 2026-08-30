@@ -1,9 +1,13 @@
 # CyberForecaster — SIH26153
 
 Temporal attack-progression forecasting:
-`flows → 60s window states → LSTM → K-step probability forecast + ATT&CK stage + attribution`.
+`flows → 30s window states → LSTM → K-step probability forecast + ATT&CK stage + attribution`.
 
-**Read `../SIH26153_battle_plan.md` first.**
+Two demo surfaces, one model: an **offline scenario console** (cached real
+predictions from CSE-CIC-IDS2018) and a **live sensor** (Npcap capture →
+same windows → same forecaster, detection verified by rehearsal).
+
+**Read `../SIH26153_battle_plan.md` first. Demo day: `docs/DEMO_RUNBOOK.md`.**
 
 ## Setup
 
@@ -30,7 +34,11 @@ python scripts/download_data.py --yes
 # 2) Rebuild every artifact in the right order (stops at the first failure)
 python scripts/rebuild_all.py
 
-# 3) The app
+# 3) The demo stack (FastAPI + Next.js — the primary demo surface)
+python -m uvicorn api.main:app --port 8000 --log-level warning   # terminal 1
+cd web && npm install && npm run dev                             # terminal 2 → http://localhost:3000
+
+# 3b) Legacy Streamlit fallback (kept demo-ready)
 streamlit run app/streamlit_app.py
 ```
 
@@ -53,6 +61,28 @@ mispredict *silently*.
 Training on Colab: `notebooks/Colab_Training.ipynb` — upload `scaler.npz` too, and
 bring back `metrics_lstm.json`, not just the weights.
 
+## Live demo (real packets → real forecasts)
+
+```bash
+# 1) Record ~12 min of benign history on the demo network (once per network)
+python scripts/record_seed.py --minutes 12 --iface "<wi-fi NPF name>"
+
+# 2) Rehearse the attack chain end-to-end BEFORE demo day (exit 0 = flagged)
+python scripts/live_rehearsal.py --minutes 6 --attack udp-sweep --attack-at 0.3 \
+    --iface "\\Device\\NPF_Loopback"
+```
+
+Then on the web console: **Live** page → start capture → attacker device runs
+`scripts/attacks/` (see its README). Verified Aug 30: benign all LOW (worst
+0.554 < 0.561); UDP sweep crosses 0.022 → 0.384 → 0.947 over three windows.
+
+Two-engine layering, by design: the rule engine catches a SYN scan within one
+window; the LSTM forecasts progression only under sustained attack shapes.
+`src/live/` maps packets to the exact training window features
+(`packet_windower`), seeds history so the model has its 10-window context
+(`history`), and the sensor resolves the live interface via the default route
+(Npcap quirks — see comments in `sensor.py`).
+
 ## Repo map
 
 ```
@@ -67,7 +97,7 @@ src/
   ingestion/csv_loader.py        load + label canonicalization + dup-header/NaN/inf cleanup
   preprocessing/pipeline.py      clean → windows → sequences → chronological split + scaler
   features/
-    window_builder.py            flows → 60s aggregates; L=10/K=5 sliding sequences
+    window_builder.py            flows → 30s aggregates; L=10/K=5 sliding sequences
     scaling.py                   THE shared input transform (log1p + standardise)
   models/
     baseline_logreg.py           logistic benchmark, one model per horizon step
@@ -78,7 +108,13 @@ src/
   evaluation/lead_time.py        early-warning lead time — LSTM vs baseline
   explainability/attribution.py  Captum IG over time; permutation fallback
   attack_mapping/mitre_mapper.py family→stage table + rule predictor + validation
-app/streamlit_app.py             demo UI: timeline / risk / WHY / ATT&CK / benchmark / lead time
+  live/                          Npcap/scapy capture → live windows → forecasts
+    sensor.py                    sniffer thread; default-route iface resolution
+    packet_windower.py           packets → the exact training feature vector
+    history.py                   seed + live windows; model_matrix (IP-zeroing)
+api/                             FastAPI: offline scenarios + /api/live/* routes
+web/                             Next.js console: forecast, benchmarks, live
+app/streamlit_app.py             fallback demo UI: timeline / risk / WHY / ATT&CK / benchmark / lead time
 ```
 
 ## Honesty rails (do not remove)
@@ -107,9 +143,13 @@ app/streamlit_app.py             demo UI: timeline / risk / WHY / ATT&CK / bench
 ## Known data limitations (state these before a judge finds them)
 
 - CSE-CIC-IDS2018's ML-ready CSVs contain **no `Src IP` / `Dst IP` columns**. So
-  `unique_src_ips` / `unique_dst_ips` are constant 0, and the MITRE
-  **lateral-movement rule abstains** rather than firing on a fabricated threshold.
-  `validate_rules()` prints this. See battle plan §5.2.
+  `unique_src_ips` / `unique_dst_ips` are constant 0 in training; the live
+  pipeline **zeroes them in model input** (`src/live/history.py: model_matrix`)
+  because nonzero values are out-of-spec and push benign toward "attack"
+  (measured 0.613 → 0.554 vs threshold 0.561). The rule engine still uses the
+  real IP counts live — where the MITRE **lateral-movement rule** is armed via
+  a live-only `lateral_port_share` (SMB/RPC/RDP/WinRM); offline it abstains
+  rather than firing on a fabricated threshold. `validate_rules()` prints this.
 - Labels are messy — casing variants, embedded duplicate header rows, NaN/inf rate
   columns, epoch-artifact timestamps parsing as 1970. `csv_loader` handles all of
   these and reports what it fixed.

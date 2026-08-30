@@ -107,6 +107,79 @@ export interface FlaggedResponse {
   rows: Record<string, unknown>[];
 }
 
+// ---- live traffic monitoring (/api/live/*) ----
+
+export interface LiveSensorStatus {
+  running: boolean;
+  iface: string | null;
+  error: string | null;
+  bin_secs: number;
+  packets_seen: number;
+  packets_skipped: number;
+  flows_in_bin: number;
+  bin_elapsed_s: number;
+  bin_remaining_s: number;
+  started_at: number | null;
+  last_packet_age_s: number | null;
+}
+
+export interface LiveWindow {
+  ts: number;
+  bin_id: number;
+  source: "seed" | "live";
+  flow_count: number;
+  pkts_total: number;
+  syn_ratio: number;
+  unique_dst_ports: number;
+  rule_stage: string;
+  empty: boolean;
+  /** Peak next-horizon probability forecast as of this window; null = not
+   * enough history yet, or annotation unavailable. */
+  forecast_peak?: number | null;
+}
+
+export interface LiveForecast {
+  probs: number[];
+  peak: number;
+  level: RiskLevel;
+  stage: string;
+  threshold: number;
+  crossing_step: number | null;
+  why: AttributionItem[] | null;
+  rule_stage: string;
+  n_history: number;
+}
+
+export interface LiveEvent {
+  ts: number;
+  bin_id: number;
+  peak: number;
+  level: RiskLevel;
+  stage: string;
+  rule_stage: string;
+  source: string;
+}
+
+export interface LiveFeed {
+  sensor: LiveSensorStatus;
+  bin_secs: number;
+  seq_len: number;
+  n_seed: number;
+  n_live: number;
+  ready: boolean;
+  windows: LiveWindow[];
+  latest: LiveForecast | null;
+  events: LiveEvent[];
+}
+
+export interface LiveStartResponse {
+  ok: boolean;
+  error?: string;
+  seeded_windows?: number;
+  model_ready?: boolean;
+  already_running?: boolean;
+}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { cache: "no-store" });
   if (!res.ok) {
@@ -142,6 +215,11 @@ export const api = {
     ),
   metrics: () => get<MetricsBundle>("/api/metrics"),
   flagged: (limit = 15) => get<FlaggedResponse>(`/api/flagged?limit=${limit}`),
+  liveFeed: () => get<LiveFeed>("/api/live/feed"),
+  liveStart: (iface?: string, useSeed = true) =>
+    post<LiveStartResponse>("/api/live/start", { iface: iface ?? null, use_seed: useSeed }),
+  liveStop: () => post<{ ok: boolean }>("/api/live/stop", {}),
+  liveInterfaces: () => get<{ interfaces: string[] }>("/api/live/interfaces"),
 };
 
 export const API_BASE = BASE;

@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { api, type MetricsBundle, type ModelMetrics } from "@/lib/api";
+import { CHART } from "@/lib/chartTheme";
 import { Card, Metric } from "@/components/ui";
 
 const COLS: (keyof ModelMetrics)[] = ["precision", "recall", "f1", "fpr", "pr_auc", "roc_auc"];
@@ -166,11 +167,11 @@ export default function BenchmarksPage() {
       : [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* ---- page header ---- */}
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-fg">Benchmarks</h1>
-        <p className="mt-1 text-sm text-fg-2">
+      <div className="border-b border-border pb-5">
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">Benchmarks</h1>
+        <p className="mt-1.5 text-sm text-fg-2">
           Chronological test split · threshold tuned on validation under an FPR
           budget, never on test · values served verbatim from the training
           scripts
@@ -217,16 +218,16 @@ export default function BenchmarksPage() {
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={horizonData} margin={{ top: 8, right: 16, bottom: 0, left: -12 }}>
-                    <CartesianGrid stroke="#232831" strokeDasharray="3 3" vertical={false} />
+                    <CartesianGrid stroke={CHART.grid} strokeDasharray="3 3" vertical={false} />
                     <XAxis
                       dataKey="step"
-                      stroke="#232831"
-                      tick={{ fill: "#5b6470", fontSize: 10, fontFamily: "JetBrains Mono" }}
+                      stroke={CHART.grid}
+                      tick={{ fill: CHART.tick, fontSize: 10, fontFamily: "JetBrains Mono" }}
                       tickLine={false}
                     />
                     <YAxis
-                      stroke="#232831"
-                      tick={{ fill: "#5b6470", fontSize: 10, fontFamily: "JetBrains Mono" }}
+                      stroke={CHART.grid}
+                      tick={{ fill: CHART.tick, fontSize: 10, fontFamily: "JetBrains Mono" }}
                       tickLine={false}
                       tickFormatter={(v: number) => v.toFixed(2)}
                       width={52}
@@ -234,13 +235,13 @@ export default function BenchmarksPage() {
                     />
                     <Tooltip
                       contentStyle={{
-                        background: "#161b21",
-                        border: "1px solid #232831",
+                        background: CHART.tooltipBg,
+                        border: `1px solid ${CHART.tooltipBorder}`,
                         borderRadius: 8,
                         fontSize: 12,
                         fontFamily: "JetBrains Mono",
                       }}
-                      labelStyle={{ color: "#8b929d" }}
+                      labelStyle={{ color: CHART.neutral }}
                       formatter={(value, name) => [
                         typeof value === "number" ? value.toFixed(3) : String(value ?? "-"),
                         name === "lstm" ? "LSTM forecaster" : "Logistic baseline",
@@ -250,9 +251,9 @@ export default function BenchmarksPage() {
                       type="monotone"
                       dataKey="baseline"
                       name="baseline"
-                      stroke="#8b929d"
+                      stroke={CHART.neutral}
                       strokeWidth={1.5}
-                      dot={{ r: 2.5, fill: "#8b929d", strokeWidth: 0 }}
+                      dot={{ r: 2.5, fill: CHART.neutral, strokeWidth: 0 }}
                       connectNulls
                       isAnimationActive={false}
                     />
@@ -260,9 +261,9 @@ export default function BenchmarksPage() {
                       type="monotone"
                       dataKey="lstm"
                       name="lstm"
-                      stroke="#f59e0b"
+                      stroke={CHART.amber}
                       strokeWidth={2}
-                      dot={{ r: 2.5, fill: "#f59e0b", strokeWidth: 0 }}
+                      dot={{ r: 2.5, fill: CHART.amber, strokeWidth: 0 }}
                       connectNulls
                       isAnimationActive={false}
                     />

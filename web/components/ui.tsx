@@ -82,14 +82,57 @@ export function Metric({
   return (
     <div className="rounded-lg border border-border bg-surface-2 px-4 py-3.5">
       <div className="label">{label}</div>
-      <div className={`mt-1.5 text-2xl font-semibold tabular-nums ${valueColor}`}>{value}</div>
+      <div className={`mono mt-1.5 text-2xl font-semibold ${valueColor}`}>{value}</div>
       {sub && <div className="mt-0.5 text-xs text-fg-2">{sub}</div>}
+    </div>
+  );
+}
+
+/**
+ * Peak-vs-threshold gauge: a probability track with the alert threshold
+ * as a fixed tick. Reads like an instrument dial — peak position is
+ * data-true, never decorative.
+ */
+export function PeakGauge({
+  peak,
+  threshold,
+  className = "",
+}: {
+  peak: number;
+  threshold: number;
+  className?: string;
+}) {
+  const over = peak >= threshold;
+  return (
+    <div className={className}>
+      <div
+        className="relative h-2 overflow-visible rounded-full bg-surface-2"
+        role="img"
+        aria-label={`Peak probability ${(peak * 100).toFixed(0)} percent against threshold ${(threshold * 100).toFixed(0)} percent`}
+      >
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ${over ? "bg-red" : "bg-amber"}`}
+          style={{ width: `${Math.min(peak, 1) * 100}%` }}
+        />
+        {/* threshold tick — sits above the track, outside the clip */}
+        <span
+          className="absolute -top-1 bottom-[-4px] w-px bg-red/80"
+          style={{ left: `${threshold * 100}%` }}
+          aria-hidden="true"
+        />
+      </div>
+      <div className="mono mt-1.5 flex justify-between text-[10px] uppercase tracking-widest text-fg-3">
+        <span>0%</span>
+        <span className="text-red/80">alert {(threshold * 100).toFixed(0)}%</span>
+        <span>100%</span>
+      </div>
     </div>
   );
 }
 
 const NAV = [
   { href: "/", label: "Forecast" },
+  { href: "/live", label: "Live" },
   { href: "/benchmarks", label: "Benchmarks" },
 ];
 

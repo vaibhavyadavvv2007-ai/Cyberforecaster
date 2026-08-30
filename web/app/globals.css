@@ -5,24 +5,25 @@
 
 /*
   CyberForecaster visual system — professional security analytics.
-  Dark and restrained; semantic color only: gray = neutral, amber =
-  forecast / attention, red = danger, green = healthy, blue = informational.
-  Inter carries the interface; JetBrains Mono appears only on technical
-  values (timestamps, IDs, feature names, metrics).
+  Deep blue-black ground (a phosphor-console cast, not generic slate),
+  gold signal amber, coral danger red. Semantic color only: gray =
+  neutral, amber = forecast / attention, red = danger, green = healthy,
+  blue = informational. Inter carries the interface; JetBrains Mono
+  carries measured values, section labels and technical readouts.
 */
 @theme {
-  --color-bg: #0b0d10;        /* app background */
-  --color-surface: #11151a;   /* cards */
-  --color-surface-2: #161b21; /* elevated: inputs, table hover, wells */
-  --color-border: #232831;    /* hairlines */
-  --color-fg: #e6e8eb;        /* primary text */
-  --color-fg-2: #8b929d;      /* secondary text */
-  --color-fg-3: #5b6470;      /* faint: axis ticks, placeholders */
+  --color-bg: #0a0e14;        /* app background */
+  --color-surface: #10151d;   /* cards */
+  --color-surface-2: #171f2b; /* elevated: inputs, table hover, wells */
+  --color-border: #222d3f;    /* hairlines */
+  --color-fg: #e9edf4;        /* primary text */
+  --color-fg-2: #9fadbe;      /* secondary text */
+  --color-fg-3: #6d7c92;      /* faint: axis ticks, placeholders */
 
-  --color-amber: #f59e0b;     /* forecast / attention */
-  --color-red: #ef4444;       /* danger, threshold crossed */
-  --color-green: #22c55e;     /* healthy / live */
-  --color-blue: #3b82f6;      /* informational */
+  --color-amber: #ffb224;     /* forecast / attention */
+  --color-red: #ff6a5f;       /* danger, threshold crossed */
+  --color-green: #43d97b;     /* healthy / live */
+  --color-blue: #6ea8fe;      /* informational */
 
   --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -42,12 +43,30 @@ body {
 }
 
 ::selection {
-  background: rgba(245, 158, 11, 0.3);
+  background: rgba(255, 178, 36, 0.28);
 }
 
 :focus-visible {
   outline: 2px solid var(--color-blue);
   outline-offset: 2px;
+}
+
+/* the browser chrome belongs to the design, not to the UA */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 9999px;
+  border: 2px solid var(--color-bg);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-fg-3);
 }
 
 /* monospace readouts — timestamps, IDs, feature names, metrics */
@@ -57,11 +76,12 @@ body {
   font-feature-settings: "tnum";
 }
 
-/* small section label — the only sanctioned uppercase */
+/* small section label — mono uppercase, the instrument register */
 .label {
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-fg-2);
 }
@@ -92,9 +112,10 @@ body {
   border-collapse: collapse;
 }
 .data-table th {
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-fg-2);
   text-align: right;
@@ -153,7 +174,7 @@ body {
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  background: var(--color-fg);
+  background: var(--color-amber);
   border: none;
   cursor: pointer;
 }
@@ -161,7 +182,7 @@ body {
   width: 14px;
   height: 14px;
   border-radius: 9999px;
-  background: var(--color-fg);
+  background: var(--color-amber);
   border: none;
   cursor: pointer;
 }

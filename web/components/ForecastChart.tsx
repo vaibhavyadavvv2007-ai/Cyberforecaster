@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import type { Timeline } from "@/lib/api";
+import { CHART } from "@/lib/chartTheme";
 
 /**
  * Observed vs forecast. Left of "Now" is observed ground truth (gray);
@@ -54,30 +55,30 @@ export function ForecastChart({ timeline }: { timeline: Timeline }) {
             <ComposedChart data={data} margin={{ top: 10, right: 12, bottom: 0, left: -6 }}>
               <XAxis
                 dataKey="label"
-                stroke="#232831"
-                tick={{ fill: "#5b6470", fontSize: 10, fontFamily: "JetBrains Mono" }}
+                stroke={CHART.grid}
+                tick={{ fill: CHART.tick, fontSize: 10, fontFamily: "JetBrains Mono" }}
                 tickLine={false}
                 interval="preserveStartEnd"
                 minTickGap={56}
               />
               <YAxis
                 domain={[0, 1]}
-                stroke="#232831"
-                tick={{ fill: "#5b6470", fontSize: 10, fontFamily: "JetBrains Mono" }}
+                stroke={CHART.grid}
+                tick={{ fill: CHART.tick, fontSize: 10, fontFamily: "JetBrains Mono" }}
                 tickLine={false}
                 tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
                 width={44}
               />
               <Tooltip
-                cursor={{ stroke: "#5b6470", strokeDasharray: "2 3" }}
+                cursor={{ stroke: CHART.tick, strokeDasharray: "2 3" }}
                 contentStyle={{
-                  background: "#161b21",
-                  border: "1px solid #232831",
+                  background: CHART.tooltipBg,
+                  border: `1px solid ${CHART.tooltipBorder}`,
                   borderRadius: 8,
                   fontSize: 12,
                   fontFamily: "JetBrains Mono",
                 }}
-                labelStyle={{ color: "#8b929d" }}
+                labelStyle={{ color: CHART.neutral }}
                 formatter={(value, name) => {
                   const pct =
                     typeof value === "number" ? `${(value * 100).toFixed(1)}%` : String(value ?? "-");
@@ -89,12 +90,12 @@ export function ForecastChart({ timeline }: { timeline: Timeline }) {
               <ReferenceArea
                 x1={anchorLabel}
                 x2={lastLabel}
-                fill="rgba(245, 158, 11, 0.05)"
+                fill="rgba(255, 178, 36, 0.06)"
                 stroke="none"
                 label={{
                   value: "forecast",
                   position: "insideTopRight",
-                  fill: "#f59e0b",
+                  fill: CHART.amber,
                   fontSize: 10,
                   fontFamily: "JetBrains Mono",
                   dy: 4,
@@ -103,12 +104,12 @@ export function ForecastChart({ timeline }: { timeline: Timeline }) {
               {/* "now" divider */}
               <ReferenceLine
                 x={anchorLabel}
-                stroke="#8b929d"
+                stroke={CHART.neutral}
                 strokeWidth={1}
                 label={{
                   value: "now",
                   position: "top",
-                  fill: "#8b929d",
+                  fill: CHART.neutral,
                   fontSize: 10,
                   fontFamily: "JetBrains Mono",
                   dy: -2,
@@ -117,12 +118,12 @@ export function ForecastChart({ timeline }: { timeline: Timeline }) {
               {/* alert threshold */}
               <ReferenceLine
                 y={timeline.threshold}
-                stroke="#ef4444"
+                stroke={CHART.red}
                 strokeDasharray="4 4"
                 label={{
                   value: `threshold ${thresholdPct}`,
                   position: "insideTopLeft",
-                  fill: "#ef4444",
+                  fill: CHART.red,
                   fontSize: 10,
                   fontFamily: "JetBrains Mono",
                   dy: -2,
@@ -132,7 +133,7 @@ export function ForecastChart({ timeline }: { timeline: Timeline }) {
               <Line
                 type="monotone"
                 dataKey="observed"
-                stroke="#8b929d"
+                stroke={CHART.neutral}
                 strokeWidth={1.5}
                 dot={false}
                 connectNulls={false}
@@ -141,9 +142,9 @@ export function ForecastChart({ timeline }: { timeline: Timeline }) {
               <Line
                 type="monotone"
                 dataKey="forecast"
-                stroke="#f59e0b"
+                stroke={CHART.amber}
                 strokeWidth={2}
-                dot={{ r: 2.5, fill: "#f59e0b", strokeWidth: 0 }}
+                dot={{ r: 2.5, fill: CHART.amber, strokeWidth: 0 }}
                 connectNulls={false}
                 isAnimationActive={false}
               />
@@ -161,7 +162,7 @@ export function ForecastChart({ timeline }: { timeline: Timeline }) {
             Forecast (model output)
           </span>
           <span className="flex items-center gap-2 text-xs text-fg-2">
-            <span className="inline-block h-[2px] w-5 rounded-full bg-[repeating-linear-gradient(90deg,#ef4444_0_4px,transparent_4px_8px)]" />
+            <span className="inline-block h-[2px] w-5 rounded-full bg-[repeating-linear-gradient(90deg,#ff6a5f_0_4px,transparent_4px_8px)]" />
             Threshold {thresholdPct}
           </span>
         </div>

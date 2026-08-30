@@ -1,0 +1,27 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - generic [ref=f1e3]:
+      - link "CyberForecaster" [ref=f1e4] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=f1e10]:
+        - link "Forecast" [ref=f1e11] [cursor=pointer]:
+          - /url: /
+        - link "Live" [ref=f1e12] [cursor=pointer]:
+          - /url: /live
+        - link "Benchmarks" [ref=f1e13] [cursor=pointer]:
+          - /url: /benchmarks
+      - generic [ref=f1e14]: Connecting
+  - main [ref=f1e18]:
+    - generic [ref=f1e20]:
+      - generic [ref=f1e21]:
+        - generic [ref=f1e22]: Scenario
+        - combobox "Scenario" [ref=f1e23]
+      - generic [ref=f1e24]:
+        - generic [ref=f1e25]: Alert threshold
+        - generic [ref=f1e26]:
+          - slider "Alert threshold" [ref=f1e27]: "0.6"
+          - generic [ref=f1e28]: 60%
+        - paragraph [ref=f1e29]: Default 0.60, tuned on validation data
+      - button "Run forecast" [disabled] [ref=f1e30]
+  - contentinfo [ref=f1e31]:
+    - paragraph [ref=f1e32]: Forecasts are decision support, not automated blocking · SIH26153 prototype · offline demo

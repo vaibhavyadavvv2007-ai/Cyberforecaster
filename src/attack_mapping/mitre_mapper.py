@@ -113,16 +113,22 @@ def rule_based_stage(f: dict, p99_bytes: float = 0.0, p99_pkts: float = 0.0,
         return "DoS"
     # 4) regular low-jitter beaconing, low volume → C2. The destination-count
     #    clause only applies when IPs exist; without them, regularity + low
-    #    volume is all we legitimately have.
-    if 5 <= flow_count <= 60 and iat_mean > 0 and (iat_std / max(iat_mean, 1e-9)) < 0.25 \
+    #    volume is all we legitimately have. pkts_total floor: a near-dead
+    #    window (5 flows / 14 pkts) is silence, not beaconing — without the
+    #    floor the rule fires on quiet-network noise (observed live Aug 30).
+    if 5 <= flow_count <= 60 and pkts_total >= 30 and iat_mean > 0 \
+            and (iat_std / max(iat_mean, 1e-9)) < 0.25 \
             and (not has_ip or n_dst <= 3):
         return "Command & Control"
-    # 5) many internal endpoints talking to each other → lateral movement.
-    #    Requires IP features; abstains without them (see docstring).
-    #    TODO after the clean retrain: add a `lateral_port_share` window feature
-    #    over {135,139,445,3389,5985,5986} (SMB/RPC/RDP/WinRM) so this rule has
-    #    an IP-free basis. Needs a feature change, so it waits for Gate 2.
-    if has_ip and min(n_src, n_dst) >= 3 and flow_count >= 6:
+    # 5) internal endpoints moving between Windows admin ports → lateral
+    #    movement. Endpoint count alone is not evidence: benign Wi-Fi gives
+    #    min(n_src, n_dst) >= 3 in every 30s window (SSDP/mDNS/LAN chatter),
+    #    so the count clause over-fired as a constant false positive. The
+    #    live-only lateral_port_share (SMB/RPC/RDP/WinRM share of flows,
+    #    LATERAL_PORTS in packet_windower) is the actual signal; it is absent
+    #    (0) in training windows, where this rule already abstains.
+    if has_ip and min(n_src, n_dst) >= 3 and flow_count >= 6 \
+            and f.get("lateral_port_share", 0.0) >= 0.2:
         return "Lateral Movement"
     # 6) huge outbound transfer with few flows → bulk exfiltration
     if p99_bytes > 0 and bytes_total > p99_bytes:

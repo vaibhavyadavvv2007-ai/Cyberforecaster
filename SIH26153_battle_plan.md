@@ -204,6 +204,8 @@ Ran the full pipeline at `--bin-secs 30` (6192 windows, 6178 sequences / tr 4145
 
 ## 7. Demo choreography — the 7-minute arc
 
+**REVISED Aug 30:** the live attack segment landed and is now the centerpiece — two engines, real packets, real crossing (0.022 → 0.384 → 0.947 over three windows, verified). The timed run-of-show with exact commands, pre-flight checklist, and fallbacks lives in **`docs/DEMO_RUNBOOK.md`** (single source of truth for demo day). Summary: offline rigor first (~2 min: scenario forecast, WHY?, benchmarks), then `/live`: seeded-history narration → attacker's SYN scan (rule engine flags Recon in one window) → sustained UDP sweep (LSTM crosses at window 3, holds ~0.98) → attribution on the live prediction → honesty close. Original arc preserved below for the pitch backbone:
+
 
 1. **0:00 Hook:** critical infrastructure gets probed continuously; static detectors raise alerts *after* the kill chain completes. NTRO is asking for forecasting.
 2. **0:45 Thesis slide:** classification vs evolution diagram (from ChatGPT blueprint §1 — keep those two ASCII-ish graphics as slides).
