@@ -1,9 +1,0 @@
-{
-  "n_feat": 18,
-  "horizon": 5,
-  "hidden": 64,
-  "layers": 2,
-  "val_AP": 0.6667187761017584,
-  "threshold": 0.7596001625061035,
-  "max_fpr": 0.05
-}

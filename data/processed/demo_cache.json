@@ -1,365 +1,365 @@
 {
-  "threshold": 0.5612232685089111,
+  "threshold": 0.5590811371803284,
   "horizon": 5,
   "n_feat": 18,
   "scenarios": {
-    "onset-122": {
+    "onset-61": {
       "probs": [
-        0.4747,
-        0.4744,
-        0.4699,
-        0.4853,
-        0.4752
+        0.4821,
+        0.3838,
+        0.6076,
+        0.5082,
+        0.6303
       ],
       "stage": "Initial Access",
-      "threshold": 0.5612232685089111,
-      "anchor": 121,
+      "threshold": 0.5590811371803284,
+      "anchor": 60,
       "name": "14 Feb 02:01 - Initial Access onset (forecast from before)",
       "kind": "onset",
       "why": [
         [
-          "fin_ratio",
-          2.41497
-        ],
-        [
           "rst_ratio",
-          2.085684
+          0.043847
         ],
         [
           "auth_port_share",
-          1.951752
-        ],
-        [
-          "iat_std",
-          1.893757
-        ],
-        [
-          "avg_pkt_size",
-          1.560554
+          0.038087
         ],
         [
           "down_up_ratio",
-          1.015763
-        ]
-      ]
-    },
-    "onset-2839": {
-      "probs": [
-        0.4901,
-        0.4908,
-        0.4853,
-        0.4992,
-        0.4891
-      ],
-      "stage": "Initial Access",
-      "threshold": 0.5612232685089111,
-      "anchor": 2838,
-      "name": "23 Feb 01:18 - Initial Access onset (forecast from before)",
-      "kind": "onset",
-      "why": [
-        [
-          "auth_port_share",
-          2.132432
-        ],
-        [
-          "iat_mean",
-          1.430508
-        ],
-        [
-          "avg_pkt_size",
-          1.404055
-        ],
-        [
-          "duration_mean",
-          1.295249
-        ],
-        [
-          "fin_ratio",
-          1.285105
-        ],
-        [
-          "iat_std",
-          1.194075
-        ]
-      ]
-    },
-    "onset-2895": {
-      "probs": [
-        0.6124,
-        0.6107,
-        0.6164,
-        0.6204,
-        0.5926
-      ],
-      "stage": "Initial Access",
-      "threshold": 0.5612232685089111,
-      "anchor": 2894,
-      "name": "23 Feb 01:46 - Initial Access onset (forecast from before)",
-      "kind": "onset",
-      "why": [
-        [
-          "auth_port_share",
-          2.490062
-        ],
-        [
-          "avg_pkt_size",
-          2.009084
-        ],
-        [
-          "fin_ratio",
-          1.655442
-        ],
-        [
-          "rst_ratio",
-          1.488702
-        ],
-        [
-          "unique_dst_ports",
-          1.487632
-        ],
-        [
-          "iat_std",
-          1.184191
-        ]
-      ]
-    },
-    "onset-3073": {
-      "probs": [
-        0.3129,
-        0.3225,
-        0.3124,
-        0.3182,
-        0.345
-      ],
-      "stage": "Initial Access",
-      "threshold": 0.5612232685089111,
-      "anchor": 3072,
-      "name": "23 Feb 03:15 - Initial Access onset (forecast from before)",
-      "kind": "onset",
-      "why": [
-        [
-          "iat_std",
-          1.683442
-        ],
-        [
-          "iat_mean",
-          1.437487
-        ],
-        [
-          "auth_port_share",
-          1.291433
-        ],
-        [
-          "avg_pkt_size",
-          1.036138
-        ],
-        [
-          "duration_mean",
-          1.01637
-        ],
-        [
-          "unique_dst_ports",
-          0.942959
-        ]
-      ]
-    },
-    "during-122": {
-      "probs": [
-        0.9769,
-        0.9734,
-        0.9804,
-        0.9684,
-        0.9662
-      ],
-      "stage": "Initial Access",
-      "threshold": 0.5612232685089111,
-      "anchor": 127,
-      "name": "14 Feb 02:03 - Initial Access underway (expect persistence)",
-      "kind": "during",
-      "why": [
-        [
-          "auth_port_share",
-          3.738792
-        ],
-        [
-          "fin_ratio",
-          2.448484
-        ],
-        [
-          "rst_ratio",
-          2.013354
-        ],
-        [
-          "iat_std",
-          1.914404
-        ],
-        [
-          "avg_pkt_size",
-          1.173258
-        ],
-        [
-          "iat_mean",
-          1.066838
-        ]
-      ]
-    },
-    "during-1825": {
-      "probs": [
-        0.5199,
-        0.525,
-        0.552,
-        0.5638,
-        0.5622
-      ],
-      "stage": "DoS",
-      "threshold": 0.5612232685089111,
-      "anchor": 1830,
-      "name": "15 Feb 09:40 - DoS underway (expect persistence)",
-      "kind": "during",
-      "why": [
-        [
-          "iat_std",
-          2.144136
-        ],
-        [
-          "avg_pkt_size",
-          1.79832
-        ],
-        [
-          "flow_count",
-          1.718402
-        ],
-        [
-          "ack_ratio",
-          1.441862
-        ],
-        [
-          "auth_port_share",
-          1.431138
-        ],
-        [
-          "rst_ratio",
-          1.285699
-        ]
-      ]
-    },
-    "during-2333": {
-      "probs": [
-        0.9857,
-        0.988,
-        0.9897,
-        0.9829,
-        0.9884
-      ],
-      "stage": "DoS",
-      "threshold": 0.5612232685089111,
-      "anchor": 2338,
-      "name": "16 Feb 10:14 - DoS underway (expect persistence)",
-      "kind": "during",
-      "why": [
-        [
-          "avg_pkt_size",
-          3.865512
-        ],
-        [
-          "down_up_ratio",
-          2.717978
-        ],
-        [
-          "auth_port_share",
-          2.358799
-        ],
-        [
-          "ack_ratio",
-          2.100345
-        ],
-        [
-          "dst_port_entropy",
-          1.765078
+          0.022256
         ],
         [
           "bytes_total",
-          1.556466
+          0.022023
+        ],
+        [
+          "fin_ratio",
+          0.018773
+        ],
+        [
+          "pkts_total",
+          0.018537
         ]
       ]
     },
-    "during-3999": {
+    "onset-937": {
       "probs": [
-        0.518,
-        0.5196,
-        0.5563,
-        0.5271,
-        0.5355
+        0.479,
+        0.3734,
+        0.6175,
+        0.5137,
+        0.6418
       ],
-      "stage": "Lateral Movement",
-      "threshold": 0.5612232685089111,
-      "anchor": 4004,
-      "name": "28 Feb 01:44 - Lateral Movement underway (expect persistence)",
+      "stage": "Initial Access",
+      "threshold": 0.5590811371803284,
+      "anchor": 936,
+      "name": "15 Feb 10:02 - DoS onset (forecast from before)",
+      "kind": "onset",
+      "why": [
+        [
+          "auth_port_share",
+          0.065074
+        ],
+        [
+          "flow_count",
+          0.043175
+        ],
+        [
+          "rst_ratio",
+          0.034872
+        ],
+        [
+          "pkts_total",
+          0.033561
+        ],
+        [
+          "dst_port_entropy",
+          0.032463
+        ],
+        [
+          "unique_dst_ports",
+          0.028559
+        ]
+      ]
+    },
+    "onset-1477": {
+      "probs": [
+        0.4899,
+        0.4304,
+        0.5276,
+        0.4738,
+        0.5534
+      ],
+      "stage": "Initial Access",
+      "threshold": 0.5590811371803284,
+      "anchor": 1476,
+      "name": "23 Feb 01:01 - Initial Access onset (forecast from before)",
+      "kind": "onset",
+      "why": [
+        [
+          "pkts_total",
+          0.160715
+        ],
+        [
+          "down_up_ratio",
+          0.11085
+        ],
+        [
+          "unique_dst_ports",
+          0.09889
+        ],
+        [
+          "dst_port_entropy",
+          0.089588
+        ],
+        [
+          "flow_count",
+          0.076537
+        ],
+        [
+          "iat_std",
+          0.073442
+        ]
+      ]
+    },
+    "onset-1849": {
+      "probs": [
+        0.4767,
+        0.3832,
+        0.5911,
+        0.5026,
+        0.6201
+      ],
+      "stage": "Initial Access",
+      "threshold": 0.5590811371803284,
+      "anchor": 1848,
+      "name": "23 Feb 09:57 - Initial Access onset (forecast from before)",
+      "kind": "onset",
+      "why": [
+        [
+          "unique_dst_ports",
+          0.051208
+        ],
+        [
+          "dst_port_entropy",
+          0.047113
+        ],
+        [
+          "rst_ratio",
+          0.046349
+        ],
+        [
+          "down_up_ratio",
+          0.039489
+        ],
+        [
+          "iat_mean",
+          0.035403
+        ],
+        [
+          "flow_count",
+          0.029217
+        ]
+      ]
+    },
+    "during-61": {
+      "probs": [
+        0.4907,
+        0.3659,
+        0.6635,
+        0.5349,
+        0.6656
+      ],
+      "stage": "Initial Access",
+      "threshold": 0.5590811371803284,
+      "anchor": 66,
+      "name": "14 Feb 02:06 - Initial Access underway (expect persistence)",
+      "kind": "during",
+      "why": [
+        [
+          "auth_port_share",
+          0.08404
+        ],
+        [
+          "rst_ratio",
+          0.03266
+        ],
+        [
+          "down_up_ratio",
+          0.025803
+        ],
+        [
+          "iat_mean",
+          0.022468
+        ],
+        [
+          "pkts_total",
+          0.022327
+        ],
+        [
+          "flow_count",
+          0.019892
+        ]
+      ]
+    },
+    "during-924": {
+      "probs": [
+        0.4797,
+        0.3757,
+        0.6137,
+        0.5123,
+        0.638
+      ],
+      "stage": "Initial Access",
+      "threshold": 0.5590811371803284,
+      "anchor": 929,
+      "name": "15 Feb 09:54 - DoS underway (expect persistence)",
+      "kind": "during",
+      "why": [
+        [
+          "auth_port_share",
+          0.065896
+        ],
+        [
+          "flow_count",
+          0.044021
+        ],
+        [
+          "rst_ratio",
+          0.038176
+        ],
+        [
+          "pkts_total",
+          0.036979
+        ],
+        [
+          "dst_port_entropy",
+          0.031924
+        ],
+        [
+          "psh_ratio",
+          0.031828
+        ]
+      ]
+    },
+    "during-1440": {
+      "probs": [
+        0.4931,
+        0.4432,
+        0.5062,
+        0.466,
+        0.5361
+      ],
+      "stage": "Initial Access",
+      "threshold": 0.5590811371803284,
+      "anchor": 1445,
+      "name": "21 Feb 10:13 - DoS underway (expect persistence)",
+      "kind": "during",
+      "why": [
+        [
+          "pkts_total",
+          0.144347
+        ],
+        [
+          "down_up_ratio",
+          0.087058
+        ],
+        [
+          "flow_count",
+          0.086709
+        ],
+        [
+          "unique_dst_ports",
+          0.082272
+        ],
+        [
+          "dst_port_entropy",
+          0.074213
+        ],
+        [
+          "iat_std",
+          0.06506
+        ]
+      ]
+    },
+    "during-2472": {
+      "probs": [
+        0.4747,
+        0.4137,
+        0.5413,
+        0.4839,
+        0.5836
+      ],
+      "stage": "Initial Access",
+      "threshold": 0.5590811371803284,
+      "anchor": 2477,
+      "name": "28 Feb 10:55 - Lateral Movement underway (expect persistence)",
       "kind": "during",
       "why": [
         [
           "rst_ratio",
-          2.747279
+          0.16812
         ],
         [
           "auth_port_share",
-          1.131111
-        ],
-        [
-          "avg_pkt_size",
-          0.925092
-        ],
-        [
-          "duration_mean",
-          0.611268
-        ],
-        [
-          "syn_ratio",
-          0.558332
-        ],
-        [
-          "iat_mean",
-          0.54274
-        ]
-      ]
-    },
-    "quiet-3223": {
-      "probs": [
-        0.28,
-        0.2912,
-        0.2831,
-        0.2841,
-        0.3178
-      ],
-      "stage": "Initial Access",
-      "threshold": 0.5612232685089111,
-      "anchor": 3223,
-      "name": "23 Feb 04:30 - quiet baseline (expect LOW)",
-      "kind": "quiet",
-      "why": [
-        [
-          "iat_mean",
-          1.80081
-        ],
-        [
-          "iat_std",
-          1.605641
-        ],
-        [
-          "rst_ratio",
-          1.324105
-        ],
-        [
-          "duration_mean",
-          1.228348
-        ],
-        [
-          "unique_dst_ports",
-          0.946482
+          0.080879
         ],
         [
           "down_up_ratio",
-          0.702108
+          0.043481
+        ],
+        [
+          "fin_ratio",
+          0.039183
+        ],
+        [
+          "dst_port_entropy",
+          0.029153
+        ],
+        [
+          "iat_mean",
+          0.028783
+        ]
+      ]
+    },
+    "quiet-1663": {
+      "probs": [
+        0.4767,
+        0.3831,
+        0.5908,
+        0.5027,
+        0.6198
+      ],
+      "stage": "Initial Access",
+      "threshold": 0.5590811371803284,
+      "anchor": 1663,
+      "name": "23 Feb 04:07 - quiet baseline (expect LOW)",
+      "kind": "quiet",
+      "why": [
+        [
+          "rst_ratio",
+          0.058146
+        ],
+        [
+          "unique_dst_ports",
+          0.047224
+        ],
+        [
+          "dst_port_entropy",
+          0.041532
+        ],
+        [
+          "iat_mean",
+          0.037348
+        ],
+        [
+          "bytes_total",
+          0.030158
+        ],
+        [
+          "pkts_total",
+          0.030067
         ]
       ]
     }

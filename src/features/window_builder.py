@@ -194,7 +194,7 @@ def chrono_split(windows: pd.DataFrame, ends: np.ndarray,
         lo, hi = int(len(windows) * frac_lo), int(len(windows) * frac_hi)
         out = []
         for j, e in enumerate(ends):
-            start = e - HORIZON - SEQ_LEN + 1
+            start = e - HORIZON - SEQ_LEN
             if start < lo or e > hi:
                 continue
             if any(abs(e - cp) <= margin or abs(start - cp) <= margin

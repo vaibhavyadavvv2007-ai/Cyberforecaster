@@ -1,4 +1,0 @@
-L=10 K=5 bin_secs=30 features=18 stages=['Reconnaissance', 'Initial Access', 'Lateral Movement', 'Command & Control', 'Exfiltration', 'DoS']
-y_prog shape=(n,5) per-horizon-step labels
-scaler=scaler.npz (log1p+standardise, fitted on train split only)
-zero_variance_features=['unique_dst_ips', 'unique_src_ips']
