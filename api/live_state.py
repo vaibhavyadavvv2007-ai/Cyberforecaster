@@ -11,7 +11,11 @@ import threading
 from src.live.history import LiveHistory
 from src.live.sensor import LiveSensor, list_interfaces
 
-BIN_SECS = 30   # must match data/processed/meta.txt (Gate 1 decision)
+BIN_SECS = 30   # intentionally 30s (≠ training's 60s in meta.txt): lower
+                # latency on demo day. The mismatch is the A/B experiment;
+                # features that depend on bin size (iat_mean, duration_mean,
+                # bytes_total, pkts_total, flow_count) will differ in scale
+                # from the training distribution. Disclose this if asked.
 
 
 class LiveService:

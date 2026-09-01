@@ -132,8 +132,10 @@ class LiveWindowBuilder:
     """Accumulates packets into fixed-length bins; flush one feature vector per bin.
 
     Bins are wall-clock aligned (epoch // bin_secs) so the demo timeline is
-    readable; bin_secs MUST match the model's training bin size (30 after the
-    Gate 1 decision — data/processed/meta.txt records it).
+    readable. The training pipeline uses 60s bins (data/processed/meta.txt).
+    The live sensor runs 30s bins by design — lower latency on demo day; this
+    is the documented A/B experiment (see STATUS.md). The mismatch is
+    intentional and must be disclosed if asked by a judge.
     """
 
     def __init__(self, bin_secs: int = 30):
