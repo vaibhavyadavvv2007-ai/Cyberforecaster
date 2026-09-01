@@ -29,6 +29,9 @@ class ForecastResponse(BaseModel):
     crossing_step: int | None        # 1-based window where probs first cross threshold
     why: list[AttributionItem] | None = None
     why_note: str | None = None      # why attribution is missing (shown, never swallowed)
+    # K × F scaled feature vectors predicted by the state-reconstruction head
+    # (Option B world model). None when predict_next_state=False or old weights.
+    state_trajectory: list[list[float]] | None = None
 
 
 class TimelinePoint(BaseModel):

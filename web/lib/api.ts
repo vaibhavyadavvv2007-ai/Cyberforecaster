@@ -47,6 +47,11 @@ export interface Forecast {
   crossing_step: number | null;
   why: AttributionItem[] | null;
   why_note: string | null;
+  /**
+   * K × F scaled feature vectors predicted by the state-reconstruction head
+   * (Option B world model). Null when head is disabled or old weights are loaded.
+   */
+  state_trajectory: number[][] | null;
 }
 
 export interface TimelinePoint {

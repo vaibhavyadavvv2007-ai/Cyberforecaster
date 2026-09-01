@@ -39,7 +39,7 @@ except ImportError as exc:  # pragma: no cover
 from sklearn.metrics import average_precision_score
 
 from ..features.scaling import apply_scaler, load_scaler
-from ..features.window_builder import horizon_any
+from ..features.window_builder import WINDOW_FEATURES, horizon_any
 from .baseline_logreg import MAX_FPR, evaluate, pick_threshold, report
 
 N_STAGES = 6
@@ -52,20 +52,33 @@ PATIENCE = 25
 
 class TemporalForecaster(nn.Module):
     def __init__(self, n_feat: int, seq_len: int = 10, horizon: int = 5,
-                 hidden: int = 64, layers: int = 2, dropout: float = 0.2):
+                 hidden: int = 64, layers: int = 2, dropout: float = 0.2,
+                 predict_next_state: bool = False):
         super().__init__()
+        self.n_feat = n_feat
         self.horizon = horizon
+        self.predict_next_state = predict_next_state
         self.lstm = nn.LSTM(n_feat, hidden, num_layers=layers, batch_first=True,
                             dropout=dropout if layers > 1 else 0.0)
         self.head = nn.Sequential(nn.Linear(hidden, hidden // 2), nn.ReLU(),
                                   nn.Dropout(dropout))
         self.prog_head = nn.Linear(hidden // 2, horizon)
         self.stage_head = nn.Linear(hidden // 2, N_STAGES)
+        # Additive state-reconstruction head — always constructed so that
+        # load_state_dict() works on any .pt regardless of the flag value.
+        # Predicts K future feature vectors (scaled, F-dim each).
+        self.state_head = nn.Linear(hidden // 2, n_feat * horizon)
 
     def forward(self, x):  # x: (B, L, F)
         out, _ = self.lstm(x)
         h = self.head(out[:, -1])
-        return self.prog_head(h), self.stage_head(h)
+        prog = self.prog_head(h)
+        stage = self.stage_head(h)
+        # state_head activated only when the flag is set; the head's weights
+        # still exist in the .pt either way so loading never fails.
+        state = (self.state_head(h).view(x.size(0), self.horizon, self.n_feat)
+                 if self.predict_next_state else None)
+        return prog, stage, state
 
 
 def _split(npz_dir: Path, name: str, sc: dict):
@@ -104,7 +117,19 @@ def _measure_cost(model, X: torch.Tensor, weights_path: Path) -> dict:
 
 
 def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
-          lr: float = 1e-3, out_dir: Path | None = None) -> dict:
+          lr: float = 1e-3, out_dir: Path | None = None,
+          predict_next_state: bool = True,
+          loss_state_weight: float = 0.3) -> dict:
+    """Train the TemporalForecaster.
+
+    predict_next_state: enable the additive state-reconstruction head
+        (Option B world-model gap fix). Set False to reproduce old behaviour
+        exactly — useful as a safety net if the head hurts existing metrics.
+    loss_state_weight: relative weight of the state-reconstruction Huber loss
+        vs. the BCE+CE sum.  Suggested sweep: {0.1, 0.3, 0.5}.
+        Too high → state head dominates and progression recall drops.
+        Too low → head exists but learns nothing useful.
+    """
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     sc = load_scaler(npz_dir / "scaler.npz")
     Xtr, ytr, str_ = _split(npz_dir, "train", sc)
@@ -112,9 +137,50 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
     Xte, yte, ste = _split(npz_dir, "test", sc)
     n_feat, K = Xtr.shape[-1], ytr.shape[1]
     print(f"training on {dev} | train={len(Xtr)} val={len(Xva)} test={len(Xte)} "
-          f"| F={n_feat} K={K}")
+          f"| F={n_feat} K={K} | predict_next_state={predict_next_state}")
 
-    tr_dl = DataLoader(TensorDataset(Xtr, ytr, str_), batch_size=batch, shuffle=True)
+    # ---- state-reconstruction targets (Option B world-model head) ----
+    # For sequence i (absolute end-index = ends[i]), the K target windows are
+    # windows[ends[i]-K : ends[i]] from windows.parquet — the same feature
+    # vectors the model must learn to reconstruct. Scaled with the shared
+    # transform so the Huber loss operates in the same space as model inputs.
+    # Requires pyarrow (Colab ships it). Falls back gracefully if absent.
+    ystr_t = ystr_v = ystr_e = None
+    if predict_next_state:
+        try:
+            import pandas as pd
+            _feat_all = (
+                pd.read_parquet(npz_dir / "windows.parquet")
+                [list(WINDOW_FEATURES)].to_numpy(dtype=np.float32)
+            )
+
+            def _y_state(split_name: str) -> torch.Tensor:
+                ends = np.load(npz_dir / f"sequences_{split_name}.npz",
+                               allow_pickle=False)["ends"]
+                raw = np.stack([_feat_all[int(e) - K : int(e)] for e in ends])
+                # scale: flatten → (n*K, F), apply, reshape → (n, K, F)
+                scaled = apply_scaler(
+                    raw.reshape(-1, n_feat), sc
+                ).reshape(len(ends), K, n_feat)
+                return torch.from_numpy(scaled).float()
+
+            ystr_t = _y_state("train")
+            ystr_v = _y_state("val")
+            ystr_e = _y_state("test")
+            print(f"state targets: train={tuple(ystr_t.shape)} "
+                  f"val={tuple(ystr_v.shape)} test={tuple(ystr_e.shape)}")
+        except Exception as exc:
+            raise RuntimeError(
+                f"predict_next_state=True requires windows.parquet + pyarrow: {exc}\n"
+                "  Install: pip install pyarrow  OR pass predict_next_state=False"
+            ) from exc
+
+    # DataLoader includes y_state only when the head is active.
+    if predict_next_state and ystr_t is not None:
+        tr_dl = DataLoader(TensorDataset(Xtr, ytr, str_, ystr_t),
+                           batch_size=batch, shuffle=True)
+    else:
+        tr_dl = DataLoader(TensorDataset(Xtr, ytr, str_), batch_size=batch, shuffle=True)
 
     # class imbalance: PER-HORIZON-STEP pos_weight from the training split only.
     # Later steps are usually rarer, so one scalar would under-weight them.
@@ -122,9 +188,13 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
     pos_weight = ((len(ytr) - n_pos) / n_pos.clamp(min=1)).to(dev)
     print("pos_weight per step:", [round(float(v), 2) for v in pos_weight])
 
-    model = TemporalForecaster(n_feat, horizon=K).to(dev)
+    model = TemporalForecaster(n_feat, horizon=K,
+                               predict_next_state=predict_next_state).to(dev)
     bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     ce = nn.CrossEntropyLoss(ignore_index=-1)
+    # Huber is less sensitive than MSE to log1p-scaled outliers in volume
+    # features (bytes_total, pkts_total can be 1e8+ before scaling).
+    huber = nn.HuberLoss() if predict_next_state else None
     opt = torch.optim.Adam(model.parameters(), lr=lr)
 
     have_val = len(Xva) > 0 and float(horizon_any(yva.numpy()).sum()) > 0
@@ -134,13 +204,23 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
     best_ap, best_state, bad = -1.0, None, 0
     for epoch in range(1, epochs + 1):
         model.train()
-        for xb, yb, sb in tr_dl:
-            xb, yb, sb = xb.to(dev), yb.to(dev), sb.to(dev)
-            opt.zero_grad()
-            prog, stg = model(xb)
-            loss = bce(prog, yb) + ce(stg, sb)         # yb is (B, K) — real targets
-            loss.backward()
-            opt.step()
+        if predict_next_state:
+            for xb, yb, sb, ysb in tr_dl:
+                xb, yb, sb, ysb = xb.to(dev), yb.to(dev), sb.to(dev), ysb.to(dev)
+                opt.zero_grad()
+                prog, stg, state = model(xb)
+                loss = (bce(prog, yb) + ce(stg, sb)
+                        + loss_state_weight * huber(state, ysb))
+                loss.backward()
+                opt.step()
+        else:
+            for xb, yb, sb in tr_dl:
+                xb, yb, sb = xb.to(dev), yb.to(dev), sb.to(dev)
+                opt.zero_grad()
+                prog, stg, _ = model(xb)
+                loss = bce(prog, yb) + ce(stg, sb)
+                loss.backward()
+                opt.step()
 
         if not have_val:
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
@@ -185,7 +265,9 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
           f"{cost['_latency_ms_cpu']} ms/sequence on CPU")
 
     cfg = {"n_feat": int(n_feat), "horizon": int(K), "hidden": 64, "layers": 2,
-           "val_AP": best_ap, "threshold": thr, "max_fpr": MAX_FPR}
+           "val_AP": best_ap, "threshold": thr, "max_fpr": MAX_FPR,
+           "predict_next_state": predict_next_state,
+           "loss_state_weight": loss_state_weight}
     (out_dir / "lstm_config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
 
     payload = {**agg, "_per_step": per_step, "_n_train": int(len(Xtr)),

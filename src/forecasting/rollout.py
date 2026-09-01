@@ -41,7 +41,8 @@ def load_model(model_path=DEFAULT_MODEL):
     model = TemporalForecaster(cfg.get("n_feat", 18),
                               horizon=cfg.get("horizon", 5),
                               hidden=cfg.get("hidden", 64),
-                              layers=cfg.get("layers", 2))
+                              layers=cfg.get("layers", 2),
+                              predict_next_state=cfg.get("predict_next_state", False))
     # weights_only=True: we only ever save a state_dict (plain tensors), and the
     # default (False) unpickles arbitrary Python objects — arbitrary code
     # execution from a .pt we shuttle back from Colab. Not in a security project.
@@ -93,21 +94,32 @@ class Forecaster:
         return cls(model=model, scaler=scaler, cfg=cfg), None
 
     def predict(self, x_raw: np.ndarray) -> dict:
-        """x_raw: (L, F) UNSCALED window features → probs/stage/threshold."""
+        """x_raw: (L, F) UNSCALED window features → probs/stage/threshold/state_trajectory.
+
+        state_trajectory: list of K feature vectors (each F-dim, scaled) when
+        predict_next_state=True; None otherwise. These are the model's prediction
+        of what the next K windows will look like — the literal world-model output.
+        """
         from ..features.scaling import apply_scaler
         from ..attack_mapping.mitre_mapper import STAGES
         if torch is None:
             raise RuntimeError("torch unavailable")
         x = apply_scaler(np.asarray(x_raw, dtype=np.float64)[None], self.scaler)
         with torch.no_grad():
-            prog_logits, stage_logits = self.model(torch.from_numpy(x).float())
+            prog_logits, stage_logits, state_pred = self.model(
+                torch.from_numpy(x).float())
             probs = torch.sigmoid(prog_logits)[0].numpy()
             stage_idx = int(stage_logits[0].argmax())
-        return {
+        result: dict = {
             "probs": [round(float(p), 4) for p in probs],
             "stage": STAGES[stage_idx] if 0 <= stage_idx < len(STAGES) else "",
             "threshold": self.threshold,
+            # K × F scaled feature vectors; None when head is disabled.
+            # Shape mirrors sequences_*.npz 'X' format for easy comparison.
+            "state_trajectory": (state_pred[0].numpy().tolist()
+                                 if state_pred is not None else None),
         }
+        return result
 
     def scaled(self, x_raw: np.ndarray) -> np.ndarray:
         """(L, F) raw → (L, F) scaled float32 — for attribution, which needs the
@@ -121,7 +133,8 @@ def forecast_probabilities(model, x: np.ndarray, stages: list[str]) -> dict:
     if torch is None or model is None:
         raise RuntimeError("model unavailable — use cached/simulated mode in the app")
     with torch.no_grad():
-        prog_logits, stage_logits = model(torch.from_numpy(x[None].astype(np.float32)))
+        prog_logits, stage_logits, _ = model(
+            torch.from_numpy(x[None].astype(np.float32)))
         probs = torch.sigmoid(prog_logits)[0].numpy()
         stage_idx = int(stage_logits[0].argmax())
     return {

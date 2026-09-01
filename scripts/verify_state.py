@@ -191,6 +191,26 @@ def check_artifacts() -> None:
               f"threshold={cfg.get('threshold')}")
         if cfg.get("threshold") is None:
             print(f"    {WARN} no threshold in config -> app falls back to 0.5 (arbitrary). Retrain.")
+        # --- state-reconstruction head consistency check ---
+        if cfg.get("predict_next_state"):
+            pt = MODELS / "trained_models" / "lstm_forecaster.pt"
+            if pt.exists():
+                try:
+                    import torch
+                    sd = torch.load(pt, map_location="cpu", weights_only=True)
+                    has_head = any(k.startswith("state_head") for k in sd)
+                    if has_head:
+                        print(f"  {OK} state_head weights present in lstm_forecaster.pt")
+                    else:
+                        print(f"  {BAD} predict_next_state=True in config but NO state_head"
+                              " weights in .pt — model needs retraining on Colab")
+                except Exception as exc:
+                    print(f"  {WARN} could not inspect .pt for state_head: {exc}")
+            else:
+                print(f"  {WARN} predict_next_state=True but lstm_forecaster.pt missing")
+        else:
+            print(f"  {OK} predict_next_state={cfg.get('predict_next_state', False)} "
+                  f"(state-reconstruction head {'enabled' if cfg.get('predict_next_state') else 'disabled'})")
     else:
         print(f"  {WARN} lstm_config.json missing — LSTM not trained yet")
     counts = {k: v for k, v in {"scaler": n_sc, "npz": n_npz, "config": n_cfg}.items()
