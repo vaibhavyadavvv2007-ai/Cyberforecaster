@@ -234,7 +234,7 @@ Ran the full pipeline at `--bin-secs 30` (6192 windows, 6178 sequences / tr 4145
 10. **"Why offline?"** → PS requirement + sovereignty argument (NTRO context) + our demo reliability.
 11. **"Why 60s windows?"** → Matches reconnaissance/beaconing tempo; configurable; sensitivity noted in docs.
 12. **"DoS isn't in your five stages?"** → Correct — ATT&CK places flooding under Impact, outside the listed progression stages; we display it as its own category rather than forcing it into the chain.
-13. **"Model size/latency?"** → [fill real numbers by Sep 3] MBs, sub-second inference on CPU — edge-deployable.
+13. **"Model size/latency?"** → 57,227 parameters · 0.23 MB weights · 2.6 ms per forecast sequence on CPU (measured Sep 1) — edge-deployable.
 14. **"Split method?"** → Chronological with boundary purge; random shuffling would leak future into training — we refuse it even though it inflates numbers.
 15. **"With 6 more months?"** → Packet-level features, graph-state representation, online learning drift handling, analyst feedback loop.
 
@@ -242,7 +242,7 @@ Ran the full pipeline at `--bin-secs 30` (6192 windows, 6178 sequences / tr 4145
 
 ## 9. Post-win runway (Sep 5 → 20, SIH official submission)
 
-- Portal needs: final idea title/abstract, **YouTube demo link field**, dataset link field, team details — assign ONE owner on Sep 5 night.
+- Portal needs: final idea title/abstract, **YouTube demo link field**, dataset link field, team details — assign ONE owner on Sep 5 night. The official 6-slide idea deck is built: `SIH26153_Idea_Presentation.pptx` (from the SIH template, with speaker notes; fill Team ID/Name, then export to PDF for the portal).
 - Upgrade Streamlit → FastAPI + React console (your home stack — now worth the time).
 - Add Tier-2 items: thin packet-level features, CTU-13 cross-dataset table.
 - Produce the exact PS deliverables: GitHub repo cleaned, README, **≤2-page architecture doc**, **≤2-min demo video**, **≤5-slide technical presentation**.
