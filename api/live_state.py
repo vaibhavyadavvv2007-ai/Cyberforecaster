@@ -125,7 +125,6 @@ class LiveService:
         hist = self.history
         if not hist.ready():
             return
-        import numpy as np
         from src.features.window_builder import SEQ_LEN
         from src.live.history import model_matrix
         allw = hist.all_windows()

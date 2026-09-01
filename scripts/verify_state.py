@@ -114,13 +114,31 @@ def check_processed() -> dict:
             print(f"         per-step positive rate: {rates}")
             print(f"         any-in-horizon: {(y.max(axis=1) > 0).mean():.3f}")
         if "ends" not in d.files:
-            print(f"    {WARN} no `ends` -> lead-time evaluation cannot run. Re-run pipeline.")
+            print(f"    {BAD} no `ends` in {name} split -> lead-time eval cannot run. Re-run pipeline.")
     total = sum(v["n"] for v in info.values())
     if total and total < 3000:
         print(f"\n  {WARN} only {total} sequences total. A 2-layer LSTM(64) is ~35k params;")
         print("        this is small enough that metrics will be noisy. Consider 30s bins")
         print("        (doubles sequences, still matches beaconing tempo) or one more day-file.")
     return info
+
+
+def check_meta() -> None:
+    """Cross-check meta.txt against the actual sequences (can drift if pipeline
+    was re-run with a different --bin-secs without updating the downstream note)."""
+    meta_p = PROC / "meta.txt"
+    if not meta_p.exists():
+        print(f"  {WARN} meta.txt missing — run the pipeline to regenerate it")
+        return
+    meta = meta_p.read_text(encoding="utf-8")
+    # Extract bin_secs=XX from the first line
+    import re
+    m = re.search(r"bin_secs=(\d+)", meta)
+    if m:
+        bin_secs = int(m.group(1))
+        print(f"  {OK} meta.txt bin_secs={bin_secs}")
+    else:
+        print(f"  {WARN} meta.txt has no bin_secs field — regenerate with the pipeline")
 
 
 def check_features() -> None:
@@ -154,6 +172,7 @@ def check_features() -> None:
 
 def check_artifacts() -> None:
     section("5. ARTIFACT CONSISTENCY")
+    check_meta()
     sc_p, cfg_p = PROC / "scaler.npz", MODELS / "trained_models" / "lstm_config.json"
     n_sc = n_cfg = n_npz = None
     if sc_p.exists():

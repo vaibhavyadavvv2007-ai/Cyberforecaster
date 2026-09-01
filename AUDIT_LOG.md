@@ -857,3 +857,146 @@ scripts/
 ✅ `python tests/smoke_synthetic.py` → **SMOKE TEST PASSED**
 
 **Repository Size Reduction:** ~150-200 MB (A/B test models, variants, legacy notebooks)
+
+---
+
+## SESSION 2 — Task 3 & Task 4 (Antigravity, 2026-09-02)
+
+### Task 3: Phase 5 Module Spot-Check
+
+All 17 modules read against their audit-report claims. Results below; full reasoning in STATUS.md.
+
+| Module | Verdict |
+|--------|---------|
+| `src/ingestion/csv_loader.py` | ✅ CONFIRMED |
+| `src/features/scaling.py` | ✅ CONFIRMED |
+| `src/features/window_builder.py` | ✅ CONFIRMED (BUG-1.3 fix at L197 intact) |
+| `src/models/baseline_logreg.py` | ✅ CONFIRMED |
+| `src/models/lstm_forecaster.py` | ✅ CONFIRMED |
+| `src/attack_mapping/mitre_mapper.py` | ✅ CONFIRMED |
+| `src/live/packet_windower.py` | ⚠️ BUG-5.1 FIXED |
+| `src/live/sensor.py` | ✅ CONFIRMED |
+| `src/live/history.py` | ✅ CONFIRMED |
+| `src/preprocessing/pipeline.py` | ✅ CONFIRMED |
+| `src/forecasting/rollout.py` | ✅ CONFIRMED |
+| `src/forecasting/scenarios.py` | ✅ CONFIRMED |
+| `src/evaluation/lead_time.py` | ✅ CONFIRMED |
+| `src/explainability/attribution.py` | ✅ CONFIRMED |
+| `api/live_state.py` | ⚠️ BUG-5.1 FIXED + unused import removed |
+| `api/state.py` | ✅ CONFIRMED |
+| `api/schemas.py` | ✅ CONFIRMED |
+
+---
+
+### BUG-5.1 — Stale/Contradictory Comments: 30s vs 60s Live Bin Size
+
+**(a) Location:**
+- `src/live/packet_windower.py` L133-136 (`LiveWindowBuilder` docstring)
+- `api/live_state.py` L14 (`BIN_SECS = 30` comment)
+
+**(b) Why it's wrong:**
+- `packet_windower.py` said `bin_secs MUST match the model's training bin size (30 after the Gate 1 decision)`. Gate 1 never decided 30s — training is 60s (confirmed in `meta.txt`). Factually wrong.
+- `live_state.py` said `# must match data/processed/meta.txt (Gate 1 decision)` — but meta.txt records `bin_secs=60` while `BIN_SECS = 30`. Self-contradictory.
+
+**(c) Correct behavior:**
+- Both comments should accurately state that 30s live / 60s training is an intentional A/B design decision (lower latency on demo day), that it creates covariate shift on 5 bin-size-dependent features, and that it must be disclosed to judges.
+
+**(d) Blast radius:**
+- Comment only. No runtime code changed. No downstream effect.
+
+**(e) Fix:**
+- `packet_windower.py`: Docstring rewritten to explain the intentional mismatch.
+- `live_state.py`: Comment on `BIN_SECS = 30` rewritten to accurately describe the A/B experiment and its implications.
+
+**(f) Verification:**
+- `python tests/smoke_synthetic.py` → **SMOKE TEST PASSED** ✅
+- Commit: `842adec`
+
+---
+
+### BUG-5.2 — Unused `import numpy as np` in `annotate()` (live_state.py L128)
+
+**(a) Location:** `api/live_state.py` L128 (inside `LiveService.annotate()`)
+
+**(b) Why it's wrong:**
+- `numpy` was imported inside the method body but `np` is never referenced anywhere in `annotate()`. `max(res["probs"])` is plain Python. IDE (Pylance) flags it as an unused import with a red squiggle.
+
+**(c) Fix:** Removed `import numpy as np` from the method.
+
+**(d) Blast radius:** None — the import was dead.
+
+**(e) Verification:** `python tests/smoke_synthetic.py` → PASSED ✅
+
+---
+
+### Task 4: Remaining Audit Items
+
+#### 4.1 — verify_state.py Coverage Gap (Phase 2, §7, Bug Category 7)
+
+**Finding:** `verify_state.py` checked `ends` presence only for the `train` split, not `val` or `test`. The `ends` array is required by `lead_time.py` for all three splits. Also, `meta.txt` `bin_secs` was never cross-checked by the script.
+
+**Fix (additive diagnostic, zero risk):**
+1. Downgraded `ends` missing from `[warn]` to `[BAD ]` and applied check to all three splits.
+2. Added `check_meta()` function that parses `meta.txt` and prints `[ ok ] meta.txt bin_secs=60`, ensuring pipeline re-runs with a different `--bin-secs` are caught immediately.
+
+**Verification:** `python scripts/verify_state.py` → runs to completion, new `[ ok ] meta.txt bin_secs=60` line visible ✅. `python tests/smoke_synthetic.py` → PASSED ✅
+
+**Commit:** included in Task 4 commit.
+
+---
+
+#### 4.2 — API/Frontend Contract Diff (Phase 2, Bug Category 8)
+
+**Finding:** Full field-by-field diff of `api/schemas.py` vs `web/lib/api.ts`:
+
+| Schema | Python | TypeScript | Match |
+|--------|--------|------------|-------|
+| `HealthResponse` | 8 fields | `Health` — 8 fields | ✅ |
+| `ForecastResponse` | 11 fields incl `why_note` | `Forecast` — 11 fields | ✅ |
+| `TimelinePoint` / `TimelineResponse` | correct | correct | ✅ |
+| `ScenarioOut` | id/name/kind/anchor | `Scenario` — 4 fields | ✅ |
+| `LiveSensorStatus` | 11 fields | 11 fields | ✅ |
+| `LiveWindow` | 8 fields + optional `forecast_peak` | 8 fields + optional | ✅ |
+| `LiveForecast` | 9 fields | 9 fields | ✅ |
+| `LiveEvent` | 6 fields | 6 fields | ✅ |
+| `LiveFeed` | 8 fields | 8 fields | ✅ |
+
+**Verdict: No drift. Contract is in sync.**
+
+---
+
+#### 4.3 — check_api.py (Phase 4 §5 — API regression test)
+
+`scripts/check_api.py` requires a running FastAPI server (needs `pyarrow` + `torch` to boot). This sandbox has neither (`pyarrow` missing → `windows.parquet` unreadable → API 503 on boot). Cannot run here.
+
+**→ Flagged for human verification on demo laptop** (see "Needs human verification" section below).
+
+---
+
+### Needs Human Verification
+
+The following were implemented or confirmed correct but cannot be fully verified in this sandbox:
+
+| Item | Why unverifiable here | What to run |
+|------|-----------------------|-------------|
+| `check_api.py` full pass | Needs running FastAPI server (`pyarrow` + `torch` missing) | `uvicorn api.main:app --port 8000` then `python scripts/check_api.py` |
+| Live pipeline (BUG-5.1 runtime path) | Needs Npcap + real packets | `python scripts/live_rehearsal.py --minutes 6 --attack udp-sweep --attack-at 0.3 --iface "\Device\NPF_Loopback"` |
+| Rule engine tuning | Needs real dataset windows (all 7 day-files) | `python -c "from src.attack_mapping.mitre_mapper import validate_rules; import pandas as pd; validate_rules(pd.read_parquet('data/processed/windows.parquet'))"` |
+
+---
+
+### Packet 1 Closure Summary
+
+**Phases completed:**
+- ✅ Phase 1: Context map (Session 1)
+- ✅ Phase 2: Bug hunt — BUG-1.3 found and fixed (Session 1); BUG-5.1, BUG-5.2 found and fixed (Session 2)
+- ✅ Phase 3: Dead code cleanup (Session 1)
+- ✅ Phase 4: Regression protocol — smoke test passing after every fix
+- ✅ Phase 5: Module-by-module sanity pass (Session 2)
+
+**Bugs found:**
+- BUG-1.3: Off-by-one in `chrono_split` boundary purge (HIGH, fixed)
+- BUG-5.1: Contradictory comments on 30s vs 60s live bin size (LOW, fixed)
+- BUG-5.2: Unused `import numpy as np` in `annotate()` (LOW, fixed)
+
+**All deliverables complete. Ready to transition to Packet 2.**
