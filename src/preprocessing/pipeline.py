@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-
+import pandas as pd
 import numpy as np
 
 from ..features.scaling import degenerate_features, fit_scaler, save_scaler
@@ -24,11 +24,24 @@ from ..attack_mapping.mitre_mapper import STAGES, validate_rules
 
 
 def run(raw_dir: Path, out_dir: Path, pcap_dir: Path | None = None, bin_secs: int = 60) -> None:
-    files = sorted(raw_dir.glob("*.csv"))
-    if not files:
-        raise SystemExit(f"no CSVs under {raw_dir} — run scripts/download_data.py first")
-
-    flows = load_many(files)
+    # If pcap_dir is provided and has .binetflow files, we route through ctu13_loader
+    binetflow_files = sorted(pcap_dir.glob("*.binetflow")) if pcap_dir else []
+    
+    if binetflow_files:
+        from ..ingestion.ctu13_loader import load_binetflow
+        print(f"\nFound CTU-13 .binetflow files in {pcap_dir}. Using strict CTU-13 loader.")
+        dfs = []
+        for f in binetflow_files:
+            dfs.append(load_binetflow(f))
+        flows = pd.concat(dfs, ignore_index=True)
+        files = binetflow_files
+    else:
+        files = sorted(raw_dir.glob("*.csv"))
+        if not files:
+            raise SystemExit(f"no CSVs under {raw_dir} or .binetflow under {pcap_dir} — run scripts/download_data.py first")
+        from ..ingestion.csv_loader import load_many
+        flows = load_many(files)
+        
     print(f"\nloaded {len(flows):,} flows from {len(files)} files "
           f"({flows['Timestamp'].min()} -> {flows['Timestamp'].max()})")
     print("\nlabel distribution:\n", flows["Label"].value_counts().to_string())

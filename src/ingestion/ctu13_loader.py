@@ -23,7 +23,26 @@ def load_binetflow(csv_path: str | Path) -> pd.DataFrame:
     df['Total Length of Bwd Packets'] = df['TotBytes'] - df['SrcBytes']
     
     # CTU-13 Labels: typically "Background", "Normal", "Botnet"
-    df['Label'] = df['Label'].apply(lambda x: 'BENIGN' if ('Background' in str(x) or 'Normal' in str(x)) else 'Botnet')
+    # Stringent Cleaning: Drop all "Background" traffic entirely.
+    df = df[~df['Label'].astype(str).str.contains('Background', case=False, na=False)]
+    
+    # Map remaining to Benign / Botnet
+    df['is_attack'] = df['Label'].astype(str).str.contains('Botnet', case=False, na=False)
+    df['Label'] = df['is_attack'].apply(lambda x: 'Botnet' if x else 'BENIGN')
+    
+    # Map Botnet to STAGES (Initial Access, Execution, Persistence, Evasion, C&C, Lateral Movement)
+    # Most CTU-13 botnet traffic is C&C or Lateral Movement (port scanning / spam)
+    def map_stage(row):
+        if not row['is_attack']:
+            return ""
+        # Very rough approximation based on typical CTU-13 characteristics:
+        # High connection rate (scan) -> Lateral Movement
+        if row['TotPkts'] < 5 and row['Dur'] < 1.0:
+            return "Lateral Movement" 
+        # Long duration, steady traffic -> C&C
+        return "Command and Control"
+        
+    df['stage'] = df.apply(map_stage, axis=1)
     
     # TCP Flags: CTU-13 State column encodes this, but it's complex (e.g. CON, INT, FIN, REQ).
     # For now, we will approximate these to zero or extract from State if possible.
@@ -51,6 +70,7 @@ def load_binetflow(csv_path: str | Path) -> pd.DataFrame:
     
     # Filter invalid
     df = df.dropna(subset=['Timestamp'])
+    df = df.dropna()  # Stringent cleaning: drop any row with NaN values
     df = df.sort_values('Timestamp').reset_index(drop=True)
     
     return df

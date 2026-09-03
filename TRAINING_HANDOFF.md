@@ -21,9 +21,14 @@ Run these cells **in order** in your Colab notebook.
 ```python
 from google.colab import drive
 drive.mount("/content/drive")
-import subprocess
-subprocess.run(["git", "-C", "/content/cyberforecaster", "pull"], check=True)
-# Ensure you are on the v2_cyberforecast branch!
+import os
+if not os.path.exists('/content/cyberforecaster'):
+    !git clone https://github.com/vaibhavyadavvv2007-ai/Cyberforecaster /content/cyberforecaster
+else:
+    %cd /content/cyberforecaster
+    !git stash
+    !git pull
+
 %cd /content/cyberforecaster
 !git checkout v2_cyberforecast
 ```
