@@ -25,6 +25,8 @@ WINDOW_FEATURES = [
     "syn_ratio", "ack_ratio", "fin_ratio", "rst_ratio", "psh_ratio",
     "unique_dst_ports", "auth_port_share", "unique_dst_ips", "unique_src_ips",
     "dst_port_entropy", "iat_mean", "iat_std", "avg_pkt_size", "down_up_ratio",
+    # Packet-level features
+    "ttl_mean", "ttl_var", "tcp_win_mean", "tcp_win_var", "frag_ratio", "payload_size_var"
 ]
 
 
@@ -107,6 +109,14 @@ def build_windows(flows: pd.DataFrame, bin_secs: int = 60) -> pd.DataFrame:
     w["iat_std"] = _mean("Flow IAT Std") / 1e6
     w["avg_pkt_size"] = _mean("Pkt Size Avg")
     w["down_up_ratio"] = _mean("Down/Up Ratio")
+
+    # Packet-level features
+    w["ttl_mean"] = _mean("ttl_mean")
+    w["ttl_var"] = _mean("ttl_var")
+    w["tcp_win_mean"] = _mean("tcp_win_mean")
+    w["tcp_win_var"] = _mean("tcp_win_var")
+    w["frag_ratio"] = _mean("frag_ratio")
+    w["payload_size_var"] = _mean("payload_size_var")
 
     if zero_filled:
         print(f"  WARNING: columns absent from input, features zero-filled: "

@@ -119,16 +119,13 @@ def _measure_cost(model, X: torch.Tensor, weights_path: Path) -> dict:
 def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
           lr: float = 1e-3, out_dir: Path | None = None,
           predict_next_state: bool = True,
-          loss_state_weight: float = 0.3) -> dict:
-    """Train the TemporalForecaster.
-
+          loss_state_weight: float = 0.3,
+          architecture: str = "lstm") -> dict:
+    """Train the Forecaster (LSTM or Transformer).
+    
+    architecture: "lstm" or "transformer".
     predict_next_state: enable the additive state-reconstruction head
-        (Option B world-model gap fix). Set False to reproduce old behaviour
-        exactly — useful as a safety net if the head hurts existing metrics.
     loss_state_weight: relative weight of the state-reconstruction Huber loss
-        vs. the BCE+CE sum.  Suggested sweep: {0.1, 0.3, 0.5}.
-        Too high → state head dominates and progression recall drops.
-        Too low → head exists but learns nothing useful.
     """
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     sc = load_scaler(npz_dir / "scaler.npz")
@@ -136,7 +133,7 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
     Xva, yva, sva = _split(npz_dir, "val", sc)
     Xte, yte, ste = _split(npz_dir, "test", sc)
     n_feat, K = Xtr.shape[-1], ytr.shape[1]
-    print(f"training on {dev} | train={len(Xtr)} val={len(Xva)} test={len(Xte)} "
+    print(f"training {architecture} on {dev} | train={len(Xtr)} val={len(Xva)} test={len(Xte)} "
           f"| F={n_feat} K={K} | predict_next_state={predict_next_state}")
 
     # ---- state-reconstruction targets (Option B world-model head) ----
@@ -188,8 +185,12 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
     pos_weight = ((len(ytr) - n_pos) / n_pos.clamp(min=1)).to(dev)
     print("pos_weight per step:", [round(float(v), 2) for v in pos_weight])
 
-    model = TemporalForecaster(n_feat, horizon=K,
-                               predict_next_state=predict_next_state).to(dev)
+    if architecture == "transformer":
+        from .transformer_forecaster import TemporalTransformerForecaster
+        model = TemporalTransformerForecaster(n_feat, horizon=K, d_model=64, num_layers=2).to(dev)
+    else:
+        model = TemporalForecaster(n_feat, horizon=K,
+                                   predict_next_state=predict_next_state).to(dev)
     bce = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     ce = nn.CrossEntropyLoss(ignore_index=-1)
     # Huber is less sensitive than MSE to log1p-scaled outliers in volume
@@ -267,7 +268,8 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
     cfg = {"n_feat": int(n_feat), "horizon": int(K), "hidden": 64, "layers": 2,
            "val_AP": best_ap, "threshold": thr, "max_fpr": MAX_FPR,
            "predict_next_state": predict_next_state,
-           "loss_state_weight": loss_state_weight}
+           "loss_state_weight": loss_state_weight,
+           "architecture": architecture}
     (out_dir / "lstm_config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
 
     payload = {**agg, "_per_step": per_step, "_n_train": int(len(Xtr)),
@@ -284,5 +286,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", type=Path, default=Path("data/processed"))
     ap.add_argument("--epochs", type=int, default=40)
+    ap.add_argument("--architecture", type=str, default="lstm", choices=["lstm", "transformer"])
     a = ap.parse_args()
-    train(a.dir, epochs=a.epochs)
+    train(a.dir, epochs=a.epochs, architecture=a.architecture)

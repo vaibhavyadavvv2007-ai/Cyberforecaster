@@ -32,17 +32,24 @@ def load_model(model_path=DEFAULT_MODEL):
     """Load the trained TemporalForecaster; returns (model, config) or (None, reason)."""
     if torch is None:
         return None, "torch not installed"
-    from ..models.lstm_forecaster import TemporalForecaster
     p = Path(model_path)
     if not p.exists():
         return None, f"no model file at {p}"
     cfg_p = p.with_name("lstm_config.json")
     cfg = json.loads(cfg_p.read_text(encoding="utf-8")) if cfg_p.exists() else {}
-    model = TemporalForecaster(cfg.get("n_feat", 18),
-                              horizon=cfg.get("horizon", 5),
-                              hidden=cfg.get("hidden", 64),
-                              layers=cfg.get("layers", 2),
-                              predict_next_state=cfg.get("predict_next_state", False))
+    if cfg.get("architecture") == "transformer":
+        from ..models.transformer_forecaster import TemporalTransformerForecaster
+        model = TemporalTransformerForecaster(cfg.get("n_feat", 18),
+                                  horizon=cfg.get("horizon", 5),
+                                  d_model=cfg.get("hidden", 64),
+                                  num_layers=cfg.get("layers", 2))
+    else:
+        from ..models.lstm_forecaster import TemporalForecaster
+        model = TemporalForecaster(cfg.get("n_feat", 18),
+                                  horizon=cfg.get("horizon", 5),
+                                  hidden=cfg.get("hidden", 64),
+                                  layers=cfg.get("layers", 2),
+                                  predict_next_state=cfg.get("predict_next_state", False))
     # weights_only=True: we only ever save a state_dict (plain tensors), and the
     # default (False) unpickles arbitrary Python objects — arbitrary code
     # execution from a .pt we shuttle back from Colab. Not in a security project.

@@ -23,7 +23,7 @@ from ..ingestion.csv_loader import load_many
 from ..attack_mapping.mitre_mapper import STAGES, validate_rules
 
 
-def run(raw_dir: Path, out_dir: Path, bin_secs: int = 60) -> None:
+def run(raw_dir: Path, out_dir: Path, pcap_dir: Path | None = None, bin_secs: int = 60) -> None:
     files = sorted(raw_dir.glob("*.csv"))
     if not files:
         raise SystemExit(f"no CSVs under {raw_dir} — run scripts/download_data.py first")
@@ -37,6 +37,25 @@ def run(raw_dir: Path, out_dir: Path, bin_secs: int = 60) -> None:
     print(f"\n{len(windows)} windows ({bin_secs}s bins) × {len(WINDOW_FEATURES)} features "
           f"| attack_frac mean={windows['attack_frac'].mean():.3f}")
 
+    if pcap_dir and pcap_dir.exists():
+        from ..features.pcap_parser import extract_packet_features
+        pcap_files = sorted(pcap_dir.glob("*.pcap*"))
+        if pcap_files:
+            print(f"extracting packet features from {len(pcap_files)} pcaps...")
+            pcap_dfs = []
+            for pf in pcap_files:
+                pcap_dfs.append(extract_packet_features(str(pf), bin_secs=bin_secs))
+            if pcap_dfs:
+                pcap_df = pd.concat(pcap_dfs).groupby('Timestamp').mean().reset_index()
+                # Ensure 'Timestamp' aligns with windows.index ('bin')
+                pcap_df = pcap_df.set_index('Timestamp')
+                
+                # Merge into windows, keeping all windows indices. Fill missing with 0
+                windows = windows.join(pcap_df, how='left')
+                windows.fillna(0, inplace=True)
+                
+                print(f"successfully merged packet features! Vector size now: {len(WINDOW_FEATURES)}")
+    
     # sanity-check the rule engine against dataset labels while we're here
     try:
         validate_rules(windows)
@@ -103,9 +122,10 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--raw", type=Path, default=Path("data/raw"))
     ap.add_argument("--out", type=Path, default=Path("data/processed"))
+    ap.add_argument("--pcap-dir", type=Path, default=None, help="Directory containing raw PCAP files to extract packet-level features.")
     ap.add_argument("--bin-secs", type=int, default=60,
                     help="window bin size in seconds (60 = 1 window/minute). "
                          "30s doubles the sequence count; pick ONE and freeze it "
                          "before Gate 1 — models and demo artifacts must agree.")
     a = ap.parse_args()
-    run(a.raw, a.out, bin_secs=a.bin_secs)
+    run(a.raw, a.out, pcap_dir=a.pcap_dir, bin_secs=a.bin_secs)
