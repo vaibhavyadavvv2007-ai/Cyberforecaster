@@ -3,9 +3,9 @@
   "horizon": 5,
   "hidden": 64,
   "layers": 2,
-  "val_AP": 0.6264899902898211,
-  "threshold": 0.5498984456062317,
+  "val_AP": 0.6666411663411814,
+  "threshold": 0.8275004625320435,
   "max_fpr": 0.05,
   "predict_next_state": true,
-  "loss_state_weight": 0.3
+  "loss_state_weight": 0.5
 }
