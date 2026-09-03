@@ -6,7 +6,7 @@
     "median_lead_windows": 0.0,
     "mean_lead_windows": 0.0,
     "max_lead_windows": 0.0,
-    "threshold": 0.9664488434791565,
+    "threshold": 0.9686524868011475,
     "_leads": [
       0
     ],
@@ -21,7 +21,7 @@
     "median_lead_windows": 0.0,
     "mean_lead_windows": 0.0,
     "max_lead_windows": 0.0,
-    "threshold": 0.9664488434791565,
+    "threshold": 0.9686524868011475,
     "_leads": [
       0,
       0
@@ -37,7 +37,7 @@
     "median_lead_windows": 0.0,
     "mean_lead_windows": 0.0,
     "max_lead_windows": 0.0,
-    "threshold": 0.5590811371803284,
+    "threshold": 0.5498984456062317,
     "_leads": [
       0
     ],
@@ -52,7 +52,7 @@
     "median_lead_windows": 0.0,
     "mean_lead_windows": 0.0,
     "max_lead_windows": 0.0,
-    "threshold": 0.5590811371803284,
+    "threshold": 0.5498984456062317,
     "_leads": [
       0,
       0
