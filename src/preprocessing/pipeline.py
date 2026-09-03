@@ -25,7 +25,7 @@ from ..attack_mapping.mitre_mapper import STAGES, validate_rules
 
 def run(raw_dir: Path, out_dir: Path, pcap_dir: Path | None = None, bin_secs: int = 60) -> None:
     # If pcap_dir is provided and has .binetflow files, we route through ctu13_loader
-    binetflow_files = sorted(pcap_dir.glob("*.binetflow")) if pcap_dir else []
+    binetflow_files = sorted(pcap_dir.rglob("*.binetflow")) if pcap_dir else []
     
     if binetflow_files:
         from ..ingestion.ctu13_loader import load_binetflow
@@ -52,7 +52,7 @@ def run(raw_dir: Path, out_dir: Path, pcap_dir: Path | None = None, bin_secs: in
 
     if pcap_dir and pcap_dir.exists():
         from ..features.pcap_parser import extract_packet_features
-        pcap_files = sorted(pcap_dir.glob("*.pcap*"))
+        pcap_files = sorted(pcap_dir.rglob("*.pcap*"))
         if pcap_files:
             print(f"extracting packet features from {len(pcap_files)} pcaps...")
             pcap_dfs = []

@@ -1,6 +1,6 @@
 import numpy as np
 from collections import defaultdict
-from scapy.all import rdpcap, IP, TCP, UDP
+from scapy.all import PcapReader, IP, TCP, UDP
 import pandas as pd
 from typing import Dict, Any, List
 
@@ -18,8 +18,6 @@ def extract_packet_features(pcap_path: str, bin_secs: int = 60) -> pd.DataFrame:
     - payload_size_var: Variance of payload size
     """
     
-    packets = rdpcap(pcap_path)
-    
     # Store raw metrics per time bin
     bins = defaultdict(lambda: {
         'ttls': [],
@@ -29,30 +27,34 @@ def extract_packet_features(pcap_path: str, bin_secs: int = 60) -> pd.DataFrame:
         'payload_sizes': []
     })
     
-    for pkt in packets:
-        if not IP in pkt:
-            continue
-            
-        timestamp = float(pkt.time)
-        bin_idx = int(timestamp // bin_secs) * bin_secs
-        
-        b = bins[bin_idx]
-        b['total_packets'] += 1
-        
-        # TTL
-        b['ttls'].append(pkt[IP].ttl)
-        
-        # Fragmentation (More Fragments flag or non-zero fragment offset)
-        if pkt[IP].flags.MF or pkt[IP].frag > 0:
-            b['frag_count'] += 1
-            
-        # Payload size
-        payload_len = len(pkt[IP].payload)
-        b['payload_sizes'].append(payload_len)
-        
-        # TCP specific
-        if TCP in pkt:
-            b['tcp_wins'].append(pkt[TCP].window)
+    with PcapReader(pcap_path) as pcap_reader:
+        for pkt in pcap_reader:
+            try:
+                if not IP in pkt:
+                    continue
+                
+                timestamp = float(pkt.time)
+                bin_idx = int(timestamp // bin_secs) * bin_secs
+                
+                b = bins[bin_idx]
+                b['total_packets'] += 1
+                
+                # TTL
+                b['ttls'].append(pkt[IP].ttl)
+                
+                # Fragmentation (More Fragments flag or non-zero fragment offset)
+                if pkt[IP].flags == 'MF' or pkt[IP].frag > 0:
+                    b['frag_count'] += 1
+                    
+                # Payload size
+                payload_len = len(pkt[IP].payload)
+                b['payload_sizes'].append(payload_len)
+                
+                # TCP specific
+                if TCP in pkt:
+                    b['tcp_wins'].append(pkt[TCP].window)
+            except Exception:
+                continue
             
     # Aggregate into DataFrame
     records = []
