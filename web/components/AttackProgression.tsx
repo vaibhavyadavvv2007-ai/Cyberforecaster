@@ -96,6 +96,39 @@ export function AttackProgression({ forecast }: { forecast: Forecast }) {
         </p>
       )}
 
+      {forecast.future_steps && forecast.future_steps.length > 0 && (
+        <div className="border-t border-border px-5 py-4">
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-2">
+              Per-step stage (state rollout)
+            </h3>
+            <span className="mono text-xs text-fg-3">V3 world model</span>
+          </div>
+          <ol className="flex flex-wrap gap-2">
+            {forecast.future_steps.map((fs) => (
+              <li
+                key={fs.step}
+                className="rounded border border-border bg-surface-2 px-2.5 py-1.5"
+                title={fs.movers
+                  .map((m) => `${m.feature} ${m.direction} (${m.delta})`)
+                  .join(", ")}
+              >
+                <div className="mono text-xs text-fg-3">T+{fs.step}</div>
+                <div className="text-xs font-medium text-fg">{fs.stage || "—"}</div>
+                <div className="mono text-xs text-fg-2">
+                  {(fs.risk * 100).toFixed(0)}% risk
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-2 text-xs leading-relaxed text-fg-3">
+            Stage and risk at each step are decoded from the model&rsquo;s
+            forecast network state S(t+k) — hover a chip for the state features
+            driving it.
+          </p>
+        </div>
+      )}
+
       <p className="flex flex-wrap items-baseline gap-x-2 border-t border-border px-5 py-3 text-xs">
         <span className="text-fg-2">Independent rule engine:</span>
         <span className="mono text-fg-2">

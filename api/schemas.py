@@ -17,6 +17,21 @@ class AttributionItem(BaseModel):
     importance: float
 
 
+class FutureMover(BaseModel):
+    feature: str
+    direction: str                   # "up" | "down" — vs the last observed window
+    delta: float                     # scaled-space change magnitude
+
+
+class FutureStep(BaseModel):
+    """V3 rollout world model: one future step, decoded from the FORECAST
+    network state S~(t+k) — stage, risk and top moving features."""
+    step: int                        # 1-based horizon step
+    stage: str                       # ATT&CK stage decoded from S~(t+k)
+    risk: float                      # attack risk decoded from S~(t+k)
+    movers: list[FutureMover]        # what moves in the state to get there
+
+
 class ForecastResponse(BaseModel):
     scenario_id: str
     mode: str                        # REAL | CACHED | SIMULATED
@@ -29,6 +44,8 @@ class ForecastResponse(BaseModel):
     crossing_step: int | None        # 1-based window where probs first cross threshold
     why: list[AttributionItem] | None = None
     why_note: str | None = None      # why attribution is missing (shown, never swallowed)
+    future_steps: list[FutureStep] | None = None   # V3 state rollout (additive; None = unavailable)
+    rollout_note: str | None = None
 
 
 class TimelinePoint(BaseModel):

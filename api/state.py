@@ -52,6 +52,11 @@ class AppState:
     p99_bytes: float = 0.0             # rule-engine thresholds, computed once
     p99_pkts: float = 0.0
     metrics: dict = field(default_factory=dict)
+    # V3 rollout world model (2026-09-04) — ADDITIVE companion; the demo path
+    # (V1 forecaster) never depends on it. None = not trained / incompatible.
+    rollout_model: object | None = None
+    rollout_cfg: dict | None = None
+    rollout_err: str | None = None
 
     @property
     def mode(self) -> str:
@@ -73,6 +78,56 @@ class AppState:
     def rule_stage_at(self, anchor: int) -> str:
         return rule_based_stage(self.windows.iloc[anchor].to_dict(),
                                 self.p99_bytes, self.p99_pkts)
+
+    def rollout_forecast(self, anchor: int) -> dict | None:
+        """V3 state-rollout companion forecast — per-step ATT&CK stage, risk
+        decoded FROM the forecast future states, and the top moving features.
+
+        Returns None on ANY problem (never raises): the demo path must not
+        depend on V3 existing. Movers are the scaled-space change vs the last
+        observed window, restricted to non-degenerate features.
+        """
+        if (self.rollout_model is None or self.windows is None
+                or self.forecaster is None):
+            return None
+        try:
+            import torch
+
+            from src.attack_mapping.mitre_mapper import STAGES
+            from src.features.scaling import apply_scaler
+            from src.forecasting.scenarios import sequence_at
+
+            seq = np.asarray(sequence_at(self.windows, anchor), dtype=np.float64)
+            xs = apply_scaler(seq, self.forecaster.scaler)
+            with torch.no_grad():
+                risks, stages, states = self.rollout_model(
+                    torch.from_numpy(xs[None]).float())
+            risks = torch.sigmoid(risks)[0].numpy()
+            stages = stages.argmax(dim=-1)[0].numpy()
+            states = states[0].numpy()
+
+            names = self.forecaster.scaler["feature_names"]
+            degenerate = self.forecaster.scaler.get("degenerate")
+            keep = [i for i in range(len(names))
+                    if degenerate is None or not bool(degenerate[i])]
+            last = xs[-1]
+            steps = []
+            for k in range(states.shape[0]):
+                delta = states[k] - last
+                movers = sorted(keep, key=lambda i: -abs(delta[i]))[:3]
+                steps.append({
+                    "step": k + 1,
+                    "stage": STAGES[int(stages[k])]
+                             if 0 <= stages[k] < len(STAGES) else "",
+                    "risk": round(float(risks[k]), 4),
+                    "movers": [{"feature": names[i],
+                                "direction": "up" if delta[i] > 0 else "down",
+                                "delta": round(float(abs(delta[i])), 3)}
+                               for i in movers],
+                })
+            return {"steps": steps}
+        except Exception:  # noqa: BLE001 — additive feature, degrade silently
+            return None
 
 
 def _load_metrics() -> dict:
@@ -125,6 +180,16 @@ def load_state() -> AppState:
         )
     except Exception as exc:  # noqa: BLE001
         st.forecaster, st.load_err = None, f"{type(exc).__name__}: {exc}"
+
+    # V3 rollout companion — additive, degrade to None (see rollout_forecast)
+    try:
+        from src.models.rollout_world_model import load_rollout_model
+        st.rollout_model, _reason = load_rollout_model(
+            MODELS / "world_model_v3" / "lambda_0.5_huber")
+        if st.rollout_model is not None:
+            st.rollout_cfg = _reason if isinstance(_reason, dict) else None
+    except Exception as exc:  # noqa: BLE001
+        st.rollout_model, st.rollout_err = None, f"{type(exc).__name__}: {exc}"
 
     if CACHE_PATH.exists():
         try:

@@ -1,0 +1,55 @@
+{
+  "dataset_id": "ctu13",
+  "n_windows": 4413,
+  "n_attack_windows": 2254,
+  "attack_window_rate": 0.5108,
+  "mean_attack_frac": 0.0075,
+  "n_scenarios": 7,
+  "scenarios_included": [
+    1,
+    4,
+    5,
+    7,
+    8,
+    10,
+    12
+  ],
+  "partial_build": true,
+  "splits": {
+    "train": 3085,
+    "test": 669,
+    "val": 659
+  },
+  "available_features": [
+    "auth_port_share",
+    "avg_pkt_size",
+    "bytes_total",
+    "down_up_ratio",
+    "dst_port_entropy",
+    "duration_mean",
+    "flow_count",
+    "pkts_total",
+    "unique_dst_ips",
+    "unique_dst_ports",
+    "unique_src_ips"
+  ],
+  "unavailable_features": [
+    "ack_ratio",
+    "fin_ratio",
+    "iat_mean",
+    "iat_std",
+    "psh_ratio",
+    "rst_ratio",
+    "syn_ratio"
+  ],
+  "stage_counts": {
+    "Reconnaissance": 0,
+    "Initial Access": 0,
+    "Lateral Movement": 0,
+    "Command & Control": 2254,
+    "Exfiltration": 0,
+    "DoS": 0
+  },
+  "bin_secs": 30,
+  "built_s": 333.7
+}

@@ -1,0 +1,27 @@
+{
+  "features": [
+    "flow_count",
+    "bytes_total",
+    "pkts_total",
+    "duration_mean",
+    "avg_pkt_size",
+    "unique_dst_ports",
+    "dst_port_entropy",
+    "down_up_ratio",
+    "auth_port_share"
+  ],
+  "n_feat": 9,
+  "horizon": 5,
+  "seq_len": 10,
+  "hidden": 64,
+  "layers": 2,
+  "val_ap_pooled": 0.9115894770362412,
+  "threshold": 0.6426395773887634,
+  "epochs_run": 8,
+  "patience": 2,
+  "trained_on": [
+    "cic2018",
+    "unsw_nb15",
+    "ctu13"
+  ]
+}

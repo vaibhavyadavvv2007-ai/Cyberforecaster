@@ -133,7 +133,9 @@ export function PeakGauge({
 const NAV = [
   { href: "/", label: "Forecast" },
   { href: "/live", label: "Live" },
+  { href: "/analyze", label: "Analyze" },
   { href: "/benchmarks", label: "Benchmarks" },
+  { href: "/datasets", label: "Datasets" },
 ];
 
 export function NavLinks() {

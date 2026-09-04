@@ -14,6 +14,8 @@ import {
 import { api, type LiveFeed, type LiveWindow, type RiskLevel } from "@/lib/api";
 import { CHART } from "@/lib/chartTheme";
 import { Badge, Card, PeakGauge, type Tone } from "@/components/ui";
+import { DecisionSupportPanel } from "@/components/DecisionSupportPanel";
+import { EvidencePanel } from "@/components/EvidencePanel";
 
 const RISK_TONE: Record<RiskLevel, Tone> = {
   HIGH: "red",
@@ -496,6 +498,15 @@ export default function LivePage() {
               )}
             </Card>
           </div>
+
+          {/* ---- live evidence + decision support (Phase 13; same engines as
+               the upload path — none when artifacts are absent) ---- */}
+          {latest.evidence && latest.evidence.length > 0 && (
+            <EvidencePanel rows={latest.evidence.slice(0, 6)} />
+          )}
+          {latest.decision_support && (
+            <DecisionSupportPanel ds={latest.decision_support} />
+          )}
 
           {/* ---- window table ---- */}
           <Card

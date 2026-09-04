@@ -1,0 +1,87 @@
+{
+  "bin_secs": 30,
+  "stages": [
+    "Reconnaissance",
+    "Initial Access",
+    "Lateral Movement",
+    "Command & Control",
+    "Exfiltration",
+    "DoS"
+  ],
+  "v1_single_stage_test": {
+    "n_stage_onsets": 1,
+    "n_warned": 1,
+    "warned_rate": 1.0,
+    "median_lead_windows": 5.0,
+    "mean_lead_windows": 5.0,
+    "max_lead_windows": 5.0,
+    "per_stage": {
+      "Lateral Movement": {
+        "n_onsets": 1,
+        "n_warned": 1,
+        "warned_rate": 1.0,
+        "median_lead_windows": 5.0
+      }
+    },
+    "median_lead_min": 2.5,
+    "mean_lead_min": 2.5,
+    "max_lead_min": 2.5
+  },
+  "v1_single_stage_val": {
+    "n_stage_onsets": 2,
+    "n_warned": 2,
+    "warned_rate": 1.0,
+    "median_lead_windows": 5.0,
+    "mean_lead_windows": 5.0,
+    "max_lead_windows": 5.0,
+    "per_stage": {
+      "Lateral Movement": {
+        "n_onsets": 2,
+        "n_warned": 2,
+        "warned_rate": 1.0,
+        "median_lead_windows": 5.0
+      }
+    },
+    "median_lead_min": 2.5,
+    "mean_lead_min": 2.5,
+    "max_lead_min": 2.5
+  },
+  "v3_per_step_stage_test": {
+    "n_stage_onsets": 1,
+    "n_warned": 1,
+    "warned_rate": 1.0,
+    "median_lead_windows": 5.0,
+    "mean_lead_windows": 5.0,
+    "max_lead_windows": 5.0,
+    "per_stage": {
+      "Lateral Movement": {
+        "n_onsets": 1,
+        "n_warned": 1,
+        "warned_rate": 1.0,
+        "median_lead_windows": 5.0
+      }
+    },
+    "median_lead_min": 2.5,
+    "mean_lead_min": 2.5,
+    "max_lead_min": 2.5
+  },
+  "v3_per_step_stage_val": {
+    "n_stage_onsets": 2,
+    "n_warned": 2,
+    "warned_rate": 1.0,
+    "median_lead_windows": 5.0,
+    "mean_lead_windows": 5.0,
+    "max_lead_windows": 5.0,
+    "per_stage": {
+      "Lateral Movement": {
+        "n_onsets": 2,
+        "n_warned": 2,
+        "warned_rate": 1.0,
+        "median_lead_windows": 5.0
+      }
+    },
+    "median_lead_min": 2.5,
+    "mean_lead_min": 2.5,
+    "max_lead_min": 2.5
+  }
+}

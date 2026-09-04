@@ -5,7 +5,8 @@ This is the heart of the project: the point where per-flow classification
 asks for).
 
 Design locked in the battle plan (§5.3):
-- 60-second bins, ~24 aggregate features per window
+- 30-second bins (src.config.BIN_SECS — Gate 1 decision; the 60s default was
+  retired in the Phase 5 single-sourcing pass), ~24 aggregate features per window
 - input sequence L=10 windows, forecast horizon K=5 windows
 - chronological split ONLY, with boundary purge so overlapping sequences
   cannot leak future information into training
@@ -16,9 +17,7 @@ import numpy as np
 import pandas as pd
 
 from ..attack_mapping.mitre_mapper import AUTH_PORTS, FAMILY_STAGE, STAGES
-
-SEQ_LEN = 10   # L: windows of history fed to the model
-HORIZON = 5    # K: windows forecast ahead
+from ..config import BIN_SECS, HORIZON, SEQ_LEN
 
 WINDOW_FEATURES = [
     "flow_count", "bytes_total", "pkts_total", "duration_mean",
@@ -37,7 +36,7 @@ def _entropy(counts: np.ndarray) -> float:
     return float(-(p * np.log2(p)).sum())
 
 
-def build_windows(flows: pd.DataFrame, bin_secs: int = 60) -> pd.DataFrame:
+def build_windows(flows: pd.DataFrame, bin_secs: int = BIN_SECS) -> pd.DataFrame:
     """Aggregate cleaned flows into per-bin feature vectors + supervision labels."""
     df = flows.copy()
     df["bin"] = df["Timestamp"].dt.floor(f"{bin_secs}s")
@@ -207,6 +206,39 @@ def chrono_split(windows: pd.DataFrame, ends: np.ndarray,
     va = split_at(train, train + val)
     te = split_at(train + val, 1.0)
     return tr, va, te
+
+
+def make_world_sequences(windows: pd.DataFrame,
+                         seq_len: int = SEQ_LEN, horizon: int = HORIZON):
+    """make_sequences + the FUTURE feature windows — the state head's targets.
+
+    The frozen V1 npz artifacts store only history X and labels; the world
+    model additionally needs S(t+1..t+K): the actual next `horizon` feature
+    vectors. Rather than regenerate the npz files (which would touch the
+    frozen baseline's data), this is a separate, additive function — the
+    world-model trainer reads windows.parquet and calls this directly.
+
+    Returns X (n,L,F), Xf (n,K,F), y_prog (n,K), y_stage (n,), ends (n,).
+    Index alignment with make_sequences is exact: same windows, same ends —
+    verified by tests — so chrono_split(windows, ends) yields identical
+    splits and the frozen V1 scaler remains valid.
+    """
+    feats = windows[WINDOW_FEATURES].to_numpy(dtype=np.float32)
+    attack_frac = windows["attack_frac"].to_numpy(dtype=np.float32)
+    stage = windows["dominant_stage_idx"].to_numpy(dtype=np.int64)
+
+    xs, xfs, ys_prog, ys_stage, ends = [], [], [], [], []
+    for i in range(len(windows) - seq_len - horizon + 1):
+        xs.append(feats[i:i + seq_len])
+        xfs.append(feats[i + seq_len:i + seq_len + horizon])
+        hz = attack_frac[i + seq_len:i + seq_len + horizon]
+        ys_prog.append((hz > 0).astype(np.float32))
+        hz_stage = stage[i + seq_len:i + seq_len + horizon]
+        valid = [s for s in hz_stage if s >= 0]
+        ys_stage.append(int(np.bincount(valid, minlength=len(STAGES)).argmax()) if valid else -1)
+        ends.append(i + seq_len + horizon)
+    return (np.stack(xs), np.stack(xfs), np.stack(ys_prog),
+            np.array(ys_stage, dtype=np.int64), np.array(ends))
 
 
 if __name__ == "__main__":

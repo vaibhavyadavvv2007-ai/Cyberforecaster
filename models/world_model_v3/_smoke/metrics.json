@@ -1,0 +1,115 @@
+{
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0,
+  "fpr": 0.0,
+  "pr_auc": 0.15368028984681048,
+  "threshold": 1.0,
+  "_per_step": [
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.15078117630562382,
+      "threshold": 1.0
+    },
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.15401194843641153,
+      "threshold": 1.0
+    },
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.15744150111776764,
+      "threshold": 1.0
+    },
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.16465939121148765,
+      "threshold": 1.0
+    },
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.1744299698204576,
+      "threshold": 1.0
+    }
+  ],
+  "_state": {
+    "n_test": 916,
+    "horizon": 5,
+    "excluded_degenerate_features": [
+      "unique_dst_ips",
+      "unique_src_ips"
+    ],
+    "mae_per_horizon": [
+      0.6199,
+      0.6296,
+      0.6479,
+      0.6724,
+      0.702
+    ],
+    "rmse_per_horizon": [
+      0.8469,
+      0.8649,
+      0.8938,
+      0.9297,
+      0.9708
+    ],
+    "cosine_per_horizon": [
+      -0.0716,
+      -0.1783,
+      -0.2015,
+      -0.2015,
+      -0.1983
+    ],
+    "mae_per_feature": {
+      "flow_count": 0.6246,
+      "bytes_total": 0.4039,
+      "pkts_total": 0.501,
+      "duration_mean": 0.5476,
+      "syn_ratio": 0.7449,
+      "ack_ratio": 0.6338,
+      "fin_ratio": 0.9733,
+      "rst_ratio": 1.4402,
+      "psh_ratio": 0.7061,
+      "unique_dst_ports": 0.5543,
+      "auth_port_share": 0.4707,
+      "unique_dst_ips": 0.1915,
+      "unique_src_ips": 0.1085,
+      "dst_port_entropy": 0.9073,
+      "iat_mean": 0.5943,
+      "iat_std": 0.4473,
+      "avg_pkt_size": 0.295,
+      "down_up_ratio": 0.6255
+    },
+    "cosine_mean": -0.1702
+  },
+  "_stage": {
+    "n_sequences_with_stage": 215,
+    "accuracy_per_step": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "_n_train": 207,
+  "_n_test": 916,
+  "_val_ap": 0.20450197580407825,
+  "_lambda_state": 0.5,
+  "_state_loss": "huber"
+}

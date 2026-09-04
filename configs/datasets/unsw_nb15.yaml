@@ -1,0 +1,71 @@
+# UNSW-NB15 dataset configuration — verified against the real files
+# downloaded 2026-09-04 (byte sizes exact; see DOWNLOAD_INSTRUCTIONS.md).
+
+dataset_id: unsw_nb15
+name: UNSW-NB15
+version: "NB15 main CSVs (2015-01-22 → 2015-02-18)"
+source_url: https://research.unsw.edu.au/projects/unsw-nb15-dataset
+modality: flow_csv
+bin_secs: 30
+
+paths:
+  raw: data/raw/unsw_nb15
+  processed: data/processed
+
+files:
+  # the four main CSVs are the training input — the adapter's discover()
+  # accepts exactly these; GT/features/events listings are not consumed
+  main:
+    - UNSW-NB15_1.csv   # 168,979,718 B
+    - UNSW-NB15_2.csv   # 165,221,021 B
+    - UNSW-NB15_3.csv   # 154,588,103 B
+    - UNSW-NB15_4.csv   #  97,588,754 B
+  auxiliary:
+    - NUSW-NB15_GT.csv          # per-packet ground truth (not consumed)
+    - NUSW-NB15_features.csv    # authoritative 49-column list
+    - UNSW-NB15_LIST_EVENTS.csv
+
+columns:
+  # headerless CSVs — column ORDER is the schema (NUSW-NB15_features.csv)
+  header: none
+  n_columns: 49
+  timestamp: Stime          # Unix epoch seconds (Ltime = flow end)
+  label: Label              # 0/1, perfectly consistent with attack_cat (verified)
+  attack_cat: attack_cat    # 48th column; empty for benign
+
+labels:
+  benign_sentinel: NORMAL   # attack_cat empty/NaN for benign flows
+  mapping: manual/research  # src/labels/attack_taxonomy.py UNSW_FAMILY_CANONICAL
+  verified_counts_2026_09_04:   # read from the real files, 2,540,047 flows
+    NORMAL: 2218764
+    Generic: 215481
+    Exploits: 44525
+    Fuzzers: 24246
+    DoS: 16353
+    Reconnaissance: 13987
+    Analysis: 2677
+    Backdoor: 1795
+    Shellcode: 1511
+    Backdoors: 534          # spelling variant of Backdoor — both mapped
+    Worms: 174
+
+capabilities:
+  # src/features/canonical_schema.py UNSW_NB15_AVAILABLE
+  includes_unique_ips: true     # unlike CIC2018's ML CSVs
+  unavailable:
+    - syn_ratio                 # no TCP flag-count columns exist
+    - ack_ratio
+    - fin_ratio
+    - rst_ratio
+    - psh_ratio
+    - iat_std                   # only directional interpacket MEANS provided
+    - retransmission_rate       # sloss/dloss = "retransmitted or dropped" ≠ retransmitted
+    - payload_size_mean         # smeanz/dmeansz are packet sizes, not payloads
+    - burstiness
+    - iat_max
+
+known_quirks:
+  - "headerless files — column order IS the schema"
+  - "'Backdoor' and 'Backdoors' both appear (534 rows of the latter)"
+  - "Stime/Ltime are epoch seconds, not string timestamps"
+  - "TCP window sizes are 0 for non-TCP flows (swin/dwin) — adapter restricts to TCP"

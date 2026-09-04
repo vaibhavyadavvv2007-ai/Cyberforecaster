@@ -1,0 +1,56 @@
+# Dataset manifest — the "never train without a manifest" rule (plan §47).
+# One entry per dataset, filled in ONLY when the data is on disk and verified.
+
+datasets:
+
+  cic2018:
+    status: READY
+    version: "2018 Processed Traffic Data for ML Algorithms"
+    source: https://www.unb.ca/cic/datasets/ids-2018.html
+    files: 7                      # curated day files (~2.1 GB) — see configs/data_sources.yaml
+    label_column: Label
+    timestamp_column: Timestamp
+    bin_secs: 30
+    packet_available: false       # ML-ready CSVs are flow aggregates
+    ip_columns_available: false
+    windows: 6192                 # verified: data/processed/meta.txt
+    attack_windows: 1486
+    adapter: src/datasets/cic2018.py
+
+  cic2017:
+    status: NOT_DOWNLOADED       # flip to PENDING_WIRING when files land
+    source: https://www.unb.ca/cic/datasets/ids-2017.html
+    adapter: src/datasets/registry.py (CIC2017Pending)
+
+  unsw_nb15:
+    status: READY              # wired 2026-09-04, files verified (byte-exact sizes)
+    source: https://research.unsw.edu.au/projects/unsw-nb15-dataset
+    files: 4 main CSVs, 2,540,047 flows, 2015-01-22 → 2015-02-18 (verified)
+    ip_columns_available: true
+    adapter: src/datasets/unsw_nb15.py
+    config: configs/datasets/unsw_nb15.yaml
+
+  ctu13:
+    status: READY              # wired 2026-09-04, labels verified from every
+                               # scenario's real .binetflow files on disk
+    source: https://www.stratosphereips.org/datasets-ctu13
+    files: 13 scenario .binetflow (Argus NetFlow, real IPs), Aug 2011
+    ip_columns_available: true
+    adapter: src/datasets/ctu13.py
+    config: configs/datasets/ctu13.yaml
+
+  ciciot2023:
+    status: NOT_DOWNLOADED
+    source: https://www.unb.ca/cic/datasets/iotdataset.html
+    adapter: src/datasets/registry.py (CICIoT2023Pending)
+
+  darpa:
+    status: NOT_DOWNLOADED
+    source: https://www.ll.mit.edu/r-d/datasets
+    adapter: src/datasets/registry.py (DARPAPending)
+
+  lanl:
+    status: NOT_DOWNLOADED
+    source: https://github.com/llnl/lanl-auth-dataset/
+    modality: auth_events        # AUXILIARY — never enters the flow feature vector
+    adapter: src/datasets/registry.py (LANLPending)

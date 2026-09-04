@@ -1,0 +1,13 @@
+{
+  "n_feat": 18,
+  "horizon": 5,
+  "hidden": 64,
+  "layers": 2,
+  "lambda_state": 0.5,
+  "state_loss": "huber",
+  "val_AP": 0.6382609277695512,
+  "threshold": 0.8942174315452576,
+  "max_fpr": 0.05,
+  "architecture": "autoregressive state rollout, risk/stage decoded from state",
+  "schema": "v1_18_features (CIC2018)"
+}

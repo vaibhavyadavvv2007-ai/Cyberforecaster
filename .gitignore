@@ -19,5 +19,8 @@ env/
 src.zip
 *.zip
 
+# dev-server / training logs — runtime noise, never source
+*.log
+
 .DS_Store
 Thumbs.db

@@ -18,7 +18,7 @@ moment a static detector would first have something to see.
 
 i.e. the earliest horizon distance at which the model was already warning.
 0 means no warning fired before onset. Reported in windows and in minutes
-(1 window = `bin_secs`, 60s by default).
+(1 window = `bin_secs`, 30s by default — src.config.BIN_SECS).
 
 Usage:
   python -m src.evaluation.lead_time --dir data/processed
@@ -30,6 +30,8 @@ import json
 from pathlib import Path
 
 import numpy as np
+
+from ..config import BIN_SECS
 
 
 def reconstruct_window_labels(ends: np.ndarray, y_prog: np.ndarray,
@@ -92,7 +94,7 @@ def lead_times(ends: np.ndarray, proba: np.ndarray, y_prog: np.ndarray,
     }
 
 
-def to_minutes(stats: dict, bin_secs: int = 60) -> dict:
+def to_minutes(stats: dict, bin_secs: int = BIN_SECS) -> dict:
     m = bin_secs / 60.0
     return {**stats,
             "median_lead_min": round(stats["median_lead_windows"] * m, 2),
@@ -112,7 +114,7 @@ def _report(name: str, s: dict) -> None:
           f"= {s['max_lead_min']:.1f} min")
 
 
-def main(npz_dir: Path, bin_secs: int = 60,
+def main(npz_dir: Path, bin_secs: int = BIN_SECS,
          out_json: Path | None = None) -> dict:
     from ..features.scaling import apply_scaler, load_scaler
     from ..features.window_builder import horizon_any
@@ -192,6 +194,6 @@ def main(npz_dir: Path, bin_secs: int = 60,
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", type=Path, default=Path("data/processed"))
-    ap.add_argument("--bin-secs", type=int, default=60)
+    ap.add_argument("--bin-secs", type=int, default=BIN_SECS)
     a = ap.parse_args()
     main(a.dir, a.bin_secs)

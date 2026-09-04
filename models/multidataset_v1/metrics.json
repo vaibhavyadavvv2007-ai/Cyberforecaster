@@ -1,0 +1,61 @@
+{
+  "experiment": "D_pooled",
+  "trained_on": [
+    "cic2018",
+    "unsw_nb15"
+  ],
+  "features": [
+    "flow_count",
+    "bytes_total",
+    "pkts_total",
+    "duration_mean",
+    "avg_pkt_size",
+    "unique_dst_ports",
+    "dst_port_entropy",
+    "down_up_ratio",
+    "auth_port_share"
+  ],
+  "feature_note": "honest 3-way intersection of the legacy 18; the plan's draft 11 included unique_src/dst_ips which CIC2018's ML-ready CSVs do not provide",
+  "epochs_run": 8,
+  "patience": 2,
+  "train_subsampled": true,
+  "train_cap": 25000,
+  "per_dataset_test": {
+    "cic2018": {
+      "precision": 0.4642857142857143,
+      "recall": 0.06046511627906977,
+      "f1": 0.10699588477366255,
+      "fpr": 0.021398002853067047,
+      "pr_auc": 0.3195046115522011,
+      "threshold": 0.5693550109863281,
+      "_n_test_windows": 916,
+      "_n_attack_windows": 215
+    },
+    "unsw_nb15": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "pr_auc": 1.0,
+      "threshold": 0.5693550109863281,
+      "_n_test_windows": 418,
+      "_n_attack_windows": 418
+    }
+  },
+  "pooled_test": {
+    "precision": 0.9663677130044843,
+    "recall": 0.6808846761453397,
+    "f1": 0.798887859128823,
+    "fpr": 0.021398002853067047,
+    "pr_auc": 0.8960715432889721,
+    "threshold": 0.5693550109863281,
+    "_n_test_windows": 1334,
+    "_n_attack_windows": 633
+  },
+  "val_ap_pooled": 0.9346897163556683,
+  "skipped": [
+    "leave_one_dataset_out",
+    "single_dataset_baselines"
+  ],
+  "skip_reason": "time budget \u2014 internal demo 2026-09-05"
+}

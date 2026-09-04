@@ -1,0 +1,78 @@
+# CTU-13 dataset configuration — verified against the real .binetflow files
+# extracted 2026-09-04 from CTU-13-Dataset.tar.bz2 (1.9 GB) into
+# data/raw/ctu13/CTU-13-Dataset/<scenario>/ (read-only).
+
+dataset_id: ctu13
+name: CTU-13
+version: "13 botnet scenarios (Stratosphere IPS, Aug 2011, Argus NetFlow)"
+source_url: https://www.stratosphereips.org/datasets-ctu13
+modality: flow_csv
+bin_secs: 30
+
+paths:
+  raw: data/raw/ctu13
+  processed: data/processed
+
+files:
+  # one .binetflow per scenario directory 1..13; bro logs / pcaps in the
+  # archive are NOT training inputs (discover() accepts exactly these)
+  pattern: "CTU-13-Dataset/<scenario>/capture*.binetflow"
+  expected_count: 13
+
+columns:
+  header: present            # 15 columns, identical in every scenario file
+  timestamp: StartTime       # "2011/08/10 09:46:59.607825" (capture-local)
+  duration: Dur
+  bytes: TotBytes
+  fwd_bytes: SrcBytes        # bwd = TotBytes - SrcBytes
+  pkts: TotPkts
+  dir: Dir                   # "<->" / "->" / "<-" / "?>" / "who" (verified)
+  state: State               # Argus TCP state strings — NOT flag counts
+  label: Label
+
+labels:
+  attack_marker: "Botnet"    # "flow=From-Botnet-V<N>-..." — verified in every
+                             # scenario's real label distribution on disk
+  benign: ["From-Normal-*", "Background*", "To-Background-*"]
+  stage_granularity: single  # no per-flow stage labels — all botnet flows map
+                             # to COMMAND_AND_CONTROL (a botnet IS a C2
+                             # architecture); families documented per scenario
+  scenario_families:         # CTU-13 documentation (Garcia et al.)
+    1: Neris
+    2: Neris
+    3: Rbot
+    4: Rbot
+    5: Virut
+    6: Menti
+    7: Sogou
+    8: Murlo
+    9: Neris
+    10: Rbot
+    11: Rbot
+    12: Rbot
+    13: Virut
+  mapping: manual/research
+
+capabilities:
+  # src/features/canonical_schema.py CTU13_AVAILABLE
+  includes_unique_ips: true      # real IPs — the group CIC2018 lacks
+  legacy_18_available: 11
+  unavailable:
+    - syn_ratio                 # Argus State strings are flow states, not counts
+    - ack_ratio
+    - fin_ratio
+    - rst_ratio
+    - psh_ratio
+    - iat_mean                  # no inter-arrival columns
+    - iat_std
+    - retransmission_rate
+    - ttl_mean                  # no packet internals (Group E)
+    - tcp_window_mean
+
+known_quirks:
+  - "ports are decimal OR hex ('0x0303') for ICMP-era rows — adapter parses both"
+  - "Dir includes odd values ('?>', '<?', 'who') — treated as unknown direction"
+  - "scenarios can share a calendar date (S4/S5 both Aug 15) — bins are per-scenario"
+  - "timestamps are capture-local with no documented zone; scenario order, not
+     absolute wall-clock, drives the per-scenario splits"
+  - ">15M flows total — process one scenario at a time (see the adapter docstring)"

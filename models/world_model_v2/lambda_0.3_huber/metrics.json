@@ -1,0 +1,105 @@
+{
+  "precision": 0.6568627450980392,
+  "recall": 0.3116279069767442,
+  "f1": 0.4227129337539432,
+  "fpr": 0.04992867332382311,
+  "pr_auc": 0.528110588479122,
+  "threshold": 0.5409050583839417,
+  "_per_step": [
+    {
+      "precision": 1.0,
+      "recall": 0.018957345971563982,
+      "f1": 0.037209302325581395,
+      "fpr": 0.0,
+      "pr_auc": 0.5150141524651666,
+      "threshold": 0.5409050583839417
+    },
+    {
+      "precision": 0.9230769230769231,
+      "recall": 0.05714285714285714,
+      "f1": 0.10762331838565023,
+      "fpr": 0.00141643059490085,
+      "pr_auc": 0.5271758458672681,
+      "threshold": 0.5409050583839417
+    },
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.14929985182092165,
+      "threshold": 0.5409050583839417
+    },
+    {
+      "precision": 0.6274509803921569,
+      "recall": 0.3076923076923077,
+      "f1": 0.4129032258064516,
+      "fpr": 0.05367231638418079,
+      "pr_auc": 0.4762989656614558,
+      "threshold": 0.5409050583839417
+    },
+    {
+      "precision": 0.2,
+      "recall": 0.004830917874396135,
+      "f1": 0.009433962264150943,
+      "fpr": 0.005641748942172073,
+      "pr_auc": 0.4245313711787654,
+      "threshold": 0.5409050583839417
+    }
+  ],
+  "_state": {
+    "n_test": 916,
+    "horizon": 5,
+    "excluded_degenerate_features": [
+      "unique_dst_ips",
+      "unique_src_ips"
+    ],
+    "mae_per_horizon": [
+      0.5839,
+      0.6128,
+      0.6052,
+      0.5845,
+      0.6109
+    ],
+    "rmse_per_horizon": [
+      0.82,
+      0.8683,
+      0.8535,
+      0.8248,
+      0.848
+    ],
+    "cosine_per_horizon": [
+      0.1768,
+      -0.3234,
+      -0.2099,
+      0.1594,
+      -0.1051
+    ],
+    "mae_per_feature": {
+      "flow_count": 0.6053,
+      "bytes_total": 0.4078,
+      "pkts_total": 0.5013,
+      "duration_mean": 0.3608,
+      "syn_ratio": 0.759,
+      "ack_ratio": 0.6422,
+      "fin_ratio": 0.9615,
+      "rst_ratio": 1.314,
+      "psh_ratio": 0.5653,
+      "unique_dst_ports": 0.4591,
+      "auth_port_share": 0.4792,
+      "unique_dst_ips": 0.0961,
+      "unique_src_ips": 0.1028,
+      "dst_port_entropy": 0.5927,
+      "iat_mean": 0.5798,
+      "iat_std": 0.4823,
+      "avg_pkt_size": 0.3004,
+      "down_up_ratio": 0.5806
+    },
+    "cosine_mean": -0.0604
+  },
+  "_n_train": 4145,
+  "_n_test": 916,
+  "_val_ap": 0.6971597489631387,
+  "_lambda_state": 0.3,
+  "_state_loss": "huber"
+}

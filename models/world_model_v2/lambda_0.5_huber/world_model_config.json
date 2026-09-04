@@ -1,0 +1,12 @@
+{
+  "n_feat": 18,
+  "horizon": 5,
+  "hidden": 64,
+  "layers": 2,
+  "lambda_state": 0.5,
+  "state_loss": "huber",
+  "val_AP": 0.6785003711102735,
+  "threshold": 0.8878438472747803,
+  "max_fpr": 0.05,
+  "schema": "v1_18_features (CIC2018)"
+}

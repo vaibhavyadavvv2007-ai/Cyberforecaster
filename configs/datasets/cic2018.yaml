@@ -1,0 +1,42 @@
+# CSE-CIC-IDS2018 dataset configuration — verified against real files
+# (configs/data_sources.yaml has the per-day download list and verified
+# label counts; audit 2026-09-04).
+
+dataset_id: cic2018
+name: CSE-CIC-IDS2018
+version: "2018 Processed Traffic Data for ML Algorithms"
+source_url: https://www.unb.ca/cic/datasets/ids-2018.html
+modality: flow_csv
+bin_secs: 30
+
+paths:
+  raw: data/raw                  # historical flat layout; data/raw/cic2018/ also accepted
+  processed: data/processed
+
+columns:
+  timestamp: Timestamp           # dd/mm/yyyy hh:mm:ss (dayfirst)
+  label: Label
+  dst_port: Dst Port
+  protocol: Protocol
+  # verified quirk: "Pkt Size Avg", NOT "Avg Pkt Size"
+  pkt_size_avg: Pkt Size Avg
+  # Src IP / Dst IP / Src Port are ABSENT from the ML-ready CSVs
+
+labels:
+  benign_sentinel: Benign
+  mapping: verified              # src/labels/attack_taxonomy.py CIC2018_FAMILY_CANONICAL
+  quirk: dataset misspells "Infilteration" — csv_loader matches the stem
+
+capabilities:
+  # canonical features this source verifiably provides (see canonical_schema)
+  unavailable:
+    - unique_src_ips             # no IP columns in ML CSVs
+    - unique_dst_ips
+  # everything packet-level (group E) is unavailable: flow aggregates only
+
+known_quirks:
+  - "Wed 14-02 file truncated at 13:00"
+  - "embedded duplicate header rows"
+  - "padded headers"
+  - "label spelling variants (SSH-Bruteforce etc.)"
+  - "zero-variance IP features in training data"

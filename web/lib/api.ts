@@ -34,6 +34,22 @@ export interface AttributionItem {
   importance: number;
 }
 
+/** One moving feature in the V3 forecast state, vs the last observed window. */
+export interface FutureMover {
+  feature: string;
+  direction: string;
+  delta: number;
+}
+
+/** One future step from the V3 rollout world model — decoded from the
+ * forecast network state S(t+k): stage, risk and top moving features. */
+export interface FutureStep {
+  step: number;
+  stage: string;
+  risk: number;
+  movers: FutureMover[];
+}
+
 export interface Forecast {
   scenario_id: string;
   mode: Mode;
@@ -47,6 +63,8 @@ export interface Forecast {
   crossing_step: number | null;
   why: AttributionItem[] | null;
   why_note: string | null;
+  /** V3 state rollout (additive companion); null = not available. */
+  future_steps: FutureStep[] | null;
 }
 
 export interface TimelinePoint {
@@ -148,6 +166,10 @@ export interface LiveForecast {
   why: AttributionItem[] | null;
   rule_stage: string;
   n_history: number;
+  /** Phase 13 enrichments — additive; null when an engine/artifact is absent. */
+  uncertainty?: UploadUncertainty | null;
+  evidence?: UploadEvidenceRow[] | null;
+  decision_support?: DecisionSupport | null;
 }
 
 export interface LiveEvent {
@@ -178,6 +200,113 @@ export interface LiveStartResponse {
   seeded_windows?: number;
   model_ready?: boolean;
   already_running?: boolean;
+}
+
+// ---- upload analysis (/api/analyze/upload, Phase 11) ----
+
+export interface UploadDetection {
+  format: "csv" | "pcap" | "pcapng";
+  style: "cic-flow-csv" | "generic-flow-csv" | null;
+  confidence: number;
+  matched: string[];
+  missing: string[];
+}
+
+export interface UploadTrajectoryPoint {
+  ts: number | string | null;
+  probs: number[];
+  peak: number;
+  stage: string;
+}
+
+export interface UploadLatest extends UploadTrajectoryPoint {
+  threshold: number;
+  crossing_step: number | null;
+}
+
+export interface UploadEvidenceRow {
+  feature: string;
+  description: string;
+  observed: number;
+  benign_mean: number;
+  benign_p99: number;
+  z: number;
+  direction: "elevated" | "suppressed" | "normal";
+  attribution: number;
+  contribution: number;
+}
+
+export interface UploadUncertainty {
+  probs_mean: number[];
+  probs_std: number[];
+  max_std: number;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  T: number;
+  stage_votes: Record<string, number>;
+}
+
+export interface MitreTechnique {
+  id: string;
+  name: string;
+  detection: string | null;
+  mitigations: string[];
+}
+
+export interface Recommendation {
+  priority: "P1" | "P2" | "P3";
+  source: "stage" | "evidence" | "mitre" | "verification";
+  action: string;
+  rationale: string;
+  refs: string[];
+}
+
+export interface DecisionSupport {
+  ts: number;
+  level: "MONITOR" | "INVESTIGATE" | "CONTAINMENT REVIEW" | "ESCALATE";
+  level_why: string;
+  level_facts: {
+    peak: number;
+    threshold: number;
+    crossing_step: number | null;
+    steps_above: number;
+    confidence: string;
+  };
+  guidance: string;
+  recommendations: Recommendation[];
+  mitre: {
+    knowledge_base: string;
+    stage?: string | null;
+    family?: string | null;
+    techniques?: MitreTechnique[];
+  };
+  human_in_loop: string;
+}
+
+export interface UploadAnalysis {
+  file: string;
+  detection: UploadDetection;
+  bin_secs: number;
+  n_flows_or_packets: number;
+  n_windows: number;
+  n_forecasts: number;
+  unavailable_features: string[];
+  trajectory: UploadTrajectoryPoint[];
+  latest: UploadLatest | null;
+  uncertainty?: UploadUncertainty | null;
+  evidence?: UploadEvidenceRow[] | null;
+  decision_support?: DecisionSupport;
+}
+
+// ---- datasets (/api/datasets, Phase 12) ----
+
+export interface DatasetRow {
+  id: string;
+  name: string;
+  version: string;
+  source_url: string;
+  modality: string;
+  status: "READY" | "PENDING_WIRING" | "NOT_DOWNLOADED";
+  n_files: number;
 }
 
 async function get<T>(path: string): Promise<T> {
@@ -220,6 +349,24 @@ export const api = {
     post<LiveStartResponse>("/api/live/start", { iface: iface ?? null, use_seed: useSeed }),
   liveStop: () => post<{ ok: boolean }>("/api/live/stop", {}),
   liveInterfaces: () => get<{ interfaces: string[] }>("/api/live/interfaces"),
+  datasets: () => get<{ datasets: DatasetRow[] }>("/api/datasets"),
+  analyzeUpload: async (file: File): Promise<UploadAnalysis> => {
+    const body = new FormData();
+    body.append("file", file);
+    const res = await fetch(`${BASE}/api/analyze/upload`, {
+      method: "POST",
+      body,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => ({}));
+      // 400 detail is [msg, {header,...}] tuple from the unknown-schema error
+      const d = (detail as { detail?: unknown }).detail;
+      const msg = Array.isArray(d) ? String(d[0]) : typeof d === "string" ? d : `upload failed: ${res.status}`;
+      throw new Error(msg);
+    }
+    return res.json() as Promise<UploadAnalysis>;
+  },
 };
 
 export const API_BASE = BASE;

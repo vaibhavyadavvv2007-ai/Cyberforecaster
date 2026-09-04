@@ -7,11 +7,33 @@ capture thread's lifecycle cannot drift from what the UI sees.
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 
+from src.config import BIN_SECS
 from src.live.history import LiveHistory
 from src.live.sensor import LiveSensor, list_interfaces
 
-BIN_SECS = 30   # must match data/processed/meta.txt (Gate 1 decision)
+# root of the repo (api/ is one level down)
+_ROOT = Path(__file__).resolve().parents[1]
+
+_engines_cache: dict | None = None      # lazy singletons, loaded on first use
+
+
+def explain_engines() -> dict:
+    """Evidence + decision-support engines, loaded once per process and shared
+    by the live feed and the upload endpoint. Each degrades to None when its
+    artifact is missing — live keeps forecasting, just without that layer."""
+    global _engines_cache
+    if _engines_cache is None:
+        from src.decision_support.engine import DecisionSupportEngine
+        from src.explainability.evidence import EvidenceEngine
+        baseline = _ROOT / "models" / "benign_baseline.json"
+        try:
+            ev = EvidenceEngine.load(baseline) if baseline.exists() else None
+        except (OSError, ValueError):
+            ev = None
+        _engines_cache = {"evidence": ev, "ds": DecisionSupportEngine()}
+    return _engines_cache
 
 
 class LiveService:
@@ -29,8 +51,11 @@ class LiveService:
                         "status": self.sensor.status()}
             from api.state import state       # late import: state loads torch
             fc = state.forecaster
+            eng = explain_engines()
             hist = LiveHistory(forecaster=fc,
-                               rule_p99=(state.p99_bytes, state.p99_pkts))
+                               rule_p99=(state.p99_bytes, state.p99_pkts),
+                               evidence_engine=eng["evidence"],
+                               ds_engine=eng["ds"])
             n_seed = hist.load_seed() if use_seed else 0
             sensor = LiveSensor(iface=iface, bin_secs=BIN_SECS)
             err = sensor.start()

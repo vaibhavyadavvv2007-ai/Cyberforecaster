@@ -1,0 +1,111 @@
+{
+  "runs": [
+    {
+      "experiment": "D_zero_shot",
+      "trained_on": "cic2018+unsw_nb15",
+      "tested_on": "cic2018",
+      "precision": 0.4642857142857143,
+      "recall": 0.06046511627906977,
+      "f1": 0.10699588477366255,
+      "fpr": 0.021398002853067047,
+      "pr_auc": 0.3195046115522011,
+      "threshold": 0.5693550109863281,
+      "n_test_windows": 916,
+      "n_attack_windows": 215
+    },
+    {
+      "experiment": "D_zero_shot",
+      "trained_on": "cic2018+unsw_nb15",
+      "tested_on": "unsw_nb15",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "pr_auc": 1.0,
+      "threshold": 0.5693550109863281,
+      "n_test_windows": 418,
+      "n_attack_windows": 418
+    },
+    {
+      "experiment": "D_pooled",
+      "trained_on": "cic2018+unsw_nb15",
+      "tested_on": "pooled",
+      "precision": 0.9663677130044843,
+      "recall": 0.6808846761453397,
+      "f1": 0.798887859128823,
+      "fpr": 0.021398002853067047,
+      "pr_auc": 0.8960715432889721,
+      "threshold": 0.5693550109863281,
+      "n_test_windows": 1334,
+      "n_attack_windows": 633
+    },
+    {
+      "experiment": "D_zero_shot",
+      "model": "multidataset_v2",
+      "trained_on": "cic2018+unsw_nb15+ctu13",
+      "tested_on": "cic2018",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.21465014281371442,
+      "threshold": 0.6426395773887634,
+      "n_test_windows": 916,
+      "n_attack_windows": 215
+    },
+    {
+      "experiment": "D_zero_shot",
+      "model": "multidataset_v2",
+      "trained_on": "cic2018+unsw_nb15+ctu13",
+      "tested_on": "unsw_nb15",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 1.0,
+      "threshold": 0.6426395773887634,
+      "n_test_windows": 418,
+      "n_attack_windows": 418
+    },
+    {
+      "experiment": "D_zero_shot",
+      "model": "multidataset_v2",
+      "trained_on": "cic2018+unsw_nb15+ctu13",
+      "tested_on": "ctu13",
+      "precision": 0.9921875,
+      "recall": 0.6927272727272727,
+      "f1": 0.815845824411135,
+      "fpr": 0.0967741935483871,
+      "pr_auc": 0.9917623944096325,
+      "threshold": 0.6426395773887634,
+      "n_test_windows": 581,
+      "n_attack_windows": 550
+    },
+    {
+      "experiment": "D_pooled",
+      "model": "multidataset_v2",
+      "trained_on": "cic2018+unsw_nb15+ctu13",
+      "tested_on": "pooled",
+      "precision": 0.9921875,
+      "recall": 0.3220625528317836,
+      "f1": 0.4862795149968092,
+      "fpr": 0.004098360655737705,
+      "pr_auc": 0.9347634537288414,
+      "threshold": 0.6426395773887634,
+      "n_test_windows": 1915,
+      "n_attack_windows": 1183
+    }
+  ],
+  "features": [
+    "flow_count",
+    "bytes_total",
+    "pkts_total",
+    "duration_mean",
+    "avg_pkt_size",
+    "unique_dst_ports",
+    "dst_port_entropy",
+    "down_up_ratio",
+    "auth_port_share"
+  ],
+  "feature_note": "honest 3-way intersection of the legacy 18; the plan's draft 11 included unique_src/dst_ips which CIC2018's ML-ready CSVs do not provide"
+}

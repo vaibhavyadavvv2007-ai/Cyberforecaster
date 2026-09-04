@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..config import BIN_SECS
 from ..features.scaling import degenerate_features, fit_scaler, save_scaler
 from ..features.window_builder import (HORIZON, SEQ_LEN, WINDOW_FEATURES,
                                        build_windows, chrono_split, horizon_any,
@@ -23,7 +24,7 @@ from ..ingestion.csv_loader import load_many
 from ..attack_mapping.mitre_mapper import STAGES, validate_rules
 
 
-def run(raw_dir: Path, out_dir: Path, bin_secs: int = 60) -> None:
+def run(raw_dir: Path, out_dir: Path, bin_secs: int = BIN_SECS) -> None:
     files = sorted(raw_dir.glob("*.csv"))
     if not files:
         raise SystemExit(f"no CSVs under {raw_dir} — run scripts/download_data.py first")
@@ -103,9 +104,10 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--raw", type=Path, default=Path("data/raw"))
     ap.add_argument("--out", type=Path, default=Path("data/processed"))
-    ap.add_argument("--bin-secs", type=int, default=60,
-                    help="window bin size in seconds (60 = 1 window/minute). "
-                         "30s doubles the sequence count; pick ONE and freeze it "
-                         "before Gate 1 — models and demo artifacts must agree.")
+    ap.add_argument("--bin-secs", type=int, default=BIN_SECS,
+                    help=f"window bin size in seconds (default {BIN_SECS}s = "
+                         "src.config.BIN_SECS, the Gate 1 decision frozen in "
+                         "data/processed/meta.txt; models and demo artifacts "
+                         "must agree)")
     a = ap.parse_args()
     run(a.raw, a.out, bin_secs=a.bin_secs)

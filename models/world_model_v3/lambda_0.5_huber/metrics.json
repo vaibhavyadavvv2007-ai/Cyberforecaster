@@ -1,0 +1,115 @@
+{
+  "precision": 1.0,
+  "recall": 0.06511627906976744,
+  "f1": 0.1222707423580786,
+  "fpr": 0.0,
+  "pr_auc": 0.6330565149485138,
+  "threshold": 0.8942174315452576,
+  "_per_step": [
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.6225504254299667,
+      "threshold": 0.8942174315452576
+    },
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.6223827806358943,
+      "threshold": 0.8942174315452576
+    },
+    {
+      "precision": 1.0,
+      "recall": 0.06698564593301436,
+      "f1": 0.12556053811659193,
+      "fpr": 0.0,
+      "pr_auc": 0.6162133521900663,
+      "threshold": 0.8942174315452576
+    },
+    {
+      "precision": 1.0,
+      "recall": 0.004807692307692308,
+      "f1": 0.009569377990430622,
+      "fpr": 0.0,
+      "pr_auc": 0.6020292999665084,
+      "threshold": 0.8942174315452576
+    },
+    {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "pr_auc": 0.5764651169675367,
+      "threshold": 0.8942174315452576
+    }
+  ],
+  "_state": {
+    "n_test": 916,
+    "horizon": 5,
+    "excluded_degenerate_features": [
+      "unique_dst_ips",
+      "unique_src_ips"
+    ],
+    "mae_per_horizon": [
+      0.8212,
+      0.8226,
+      0.8197,
+      0.8079,
+      0.7886
+    ],
+    "rmse_per_horizon": [
+      1.0395,
+      1.05,
+      1.0635,
+      1.0668,
+      1.0616
+    ],
+    "cosine_per_horizon": [
+      0.2187,
+      0.2417,
+      0.2589,
+      0.2739,
+      0.2891
+    ],
+    "mae_per_feature": {
+      "flow_count": 1.2754,
+      "bytes_total": 0.7474,
+      "pkts_total": 0.4008,
+      "duration_mean": 1.2339,
+      "syn_ratio": 1.0119,
+      "ack_ratio": 0.6049,
+      "fin_ratio": 1.1719,
+      "rst_ratio": 1.0902,
+      "psh_ratio": 0.7394,
+      "unique_dst_ports": 0.7067,
+      "auth_port_share": 0.6711,
+      "unique_dst_ips": 0.211,
+      "unique_src_ips": 0.2085,
+      "dst_port_entropy": 0.8534,
+      "iat_mean": 0.7721,
+      "iat_std": 0.6255,
+      "avg_pkt_size": 0.259,
+      "down_up_ratio": 0.8285
+    },
+    "cosine_mean": 0.2565
+  },
+  "_stage": {
+    "n_sequences_with_stage": 215,
+    "accuracy_per_step": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.9581
+    ]
+  },
+  "_n_train": 4145,
+  "_n_test": 916,
+  "_val_ap": 0.6382609277695512,
+  "_lambda_state": 0.5,
+  "_state_loss": "huber"
+}

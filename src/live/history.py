@@ -71,12 +71,17 @@ def model_matrix(windows: list[dict]) -> np.ndarray:
 
 
 class LiveHistory:
-    def __init__(self, forecaster=None, rule_p99: tuple[float, float] = (0.0, 0.0)):
+    def __init__(self, forecaster=None, rule_p99: tuple[float, float] = (0.0, 0.0),
+                 evidence_engine=None, ds_engine=None):
         """forecaster: src.forecasting.rollout.Forecaster (None → predictions
         unavailable, windows still collected). rule_p99: (bytes, pkts) p99 from
-        the training windows, fed to the independent rule engine."""
+        the training windows, fed to the independent rule engine.
+        evidence_engine/ds_engine: Phase 9/10 engines (None → the forecast is
+        returned without that enrichment; nothing is faked in its place)."""
         self.forecaster = forecaster
         self.rule_p99 = rule_p99
+        self.evidence_engine = evidence_engine
+        self.ds_engine = ds_engine
         self.seed: list[dict] = []
         self.live: list[dict] = []
         self.events: list[dict] = []
@@ -111,13 +116,15 @@ class LiveHistory:
         no model — the UI shows 'collecting history' instead of inventing."""
         if not self.ready():
             return None
-        seq = model_matrix(self.all_windows()[-SEQ_LEN:])
+        windows = self.all_windows()[-SEQ_LEN:]
+        seq = model_matrix(windows)
         res = self.forecaster.predict(seq)                     # type: ignore[union-attr]
         probs, thr = res["probs"], res["threshold"]
         peak = max(probs) if probs else 0.0
         level = "HIGH" if peak >= 0.8 else ("ELEVATED" if peak >= thr else "LOW")
         crossing = next((k + 1 for k, p in enumerate(probs) if p >= thr), None)
 
+        attr = None
         why = None
         try:
             from ..explainability.attribution import integrated_gradients_attribution
@@ -128,6 +135,14 @@ class LiveHistory:
                     "importance": round(float(abs(attr[i])), 6)} for i in order]
         except Exception:  # noqa: BLE001 — attribution is optional live
             why = None
+
+        # ---- Phase 9/10 enrichments, additive: each degrades to None ------
+        # (never a fabricated substitute), so the live demo keeps working
+        # exactly as before when an artifact or engine is missing.
+        uncertainty = self._uncertainty(seq)
+        evidence = self._evidence(windows, attr)
+        decision_support = self._decision_support(
+            probs, thr, res["stage"], crossing, uncertainty, evidence)
 
         last = self.all_windows()[-1]
         rule = self._rule_stage(last)
@@ -153,7 +168,46 @@ class LiveHistory:
             "stage": res["stage"], "threshold": thr,
             "crossing_step": crossing, "why": why, "rule_stage": rule,
             "n_history": len(self.all_windows()),
+            "uncertainty": uncertainty,
+            "evidence": evidence,
+            "decision_support": decision_support,
         }
+
+    # -------------------------------------------------- Phase 9/10 enrichment
+    def _uncertainty(self, seq: np.ndarray) -> dict | None:
+        """Seeded MC-dropout band on the current sequence."""
+        if self.forecaster is None:
+            return None
+        try:
+            from ..explainability.uncertainty import mc_dropout_forecast
+            return mc_dropout_forecast(
+                self.forecaster.model, self.forecaster.scaled(seq),  # type: ignore[union-attr]
+                T=16, seed=0)
+        except Exception:  # noqa: BLE001 — band is optional live
+            return None
+
+    def _evidence(self, windows: list[dict], attr: np.ndarray | None) -> list | None:
+        """Evidence rows from the RAW window values — the real observed IPs and
+        unclamped ratios, not the conditioning zeros/clamps the model saw."""
+        if attr is None or self.evidence_engine is None:
+            return None
+        try:
+            raw = np.asarray(windows_to_matrix(windows), dtype=np.float64)
+            return self.evidence_engine.top(raw, attr, k=8)
+        except Exception:  # noqa: BLE001 — evidence is optional live
+            return None
+
+    def _decision_support(self, probs, thr, stage, crossing, uncertainty,
+                          evidence) -> dict | None:
+        if self.ds_engine is None:
+            return None
+        try:
+            return self.ds_engine.assess(
+                {"probs": probs, "threshold": thr, "stage": stage,
+                 "crossing_step": crossing},
+                uncertainty=uncertainty, evidence=evidence)
+        except Exception:  # noqa: BLE001 — decision support is optional live
+            return None
 
     def _rule_stage(self, window: dict) -> str:
         from ..attack_mapping.mitre_mapper import rule_based_stage

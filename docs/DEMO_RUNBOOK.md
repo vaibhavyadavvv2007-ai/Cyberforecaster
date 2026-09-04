@@ -147,3 +147,53 @@ IP (10.x/192.168.x from `ipconfig`), never the carrier public IP.
 **Seed rule:** the seed must be recorded on the network you demo from
 (12 min, §5). A seed from a different network skews the baseline — verified
 both directions on Aug 30 (matched network: 0.014; mismatched: 0.65+).
+
+---
+
+## 8. Additions since the Aug 30 rehearsal (Sep 4 build — all additive)
+
+Everything in §0–§7 still works exactly as rehearsed. The following are NEW
+surface you can optionally weave into the arc; none of it replaces the
+verified path.
+
+**New panels on the Live page (appear automatically when the engines load):**
+
+- **Evidence panel** — per-feature rows: observed value (RAW, unclamped),
+  benign baseline mean/p99, z-score, direction, contribution bars. Use it at
+  the 5:45 "why it fired" beat instead of the old attribution panel — same
+  story, real numbers.
+- **Decision support panel** — MONITOR → INVESTIGATE → CONTAINMENT REVIEW →
+  ESCALATE level badge, ranked P1–P3 recommended actions, ATT&CK technique
+  enrichment with real MITRE STIX mitigations/detections, and the human-in-
+  loop footer. Strong close for the judges: "it recommends, the analyst
+  decides — nothing is ever blocked automatically."
+- Both panels degrade to nothing (legacy fields only) if an engine/artifact
+  fails to load — the demo cannot break because of them.
+
+**New pages:**
+
+- **/analyze** — upload a CIC flow CSV or a PCAP → format auto-detection →
+  forecast at end-of-capture + MC-dropout confidence + per-anchor trajectory
+  + evidence + decision support. Handy backup if live Wi-Fi fails on stage:
+  upload one of the training day CSVs and tell the same forecast story
+  offline. (Honest note: same input conditioning as live — disclosed on the
+  page.)
+- **/datasets** — the multi-dataset registry rendered verbatim: READY /
+  PENDING_WIRING / NOT_DOWNLOADED per dataset with modality and source
+  links. One-line credibility beat: "seven datasets, honest status for each."
+
+**Docs to have open in a tab for Q&A:**
+
+- `MODEL_CARD.md` (repo root) — metrics, calibration, honest limitations
+  (incl. the lead-time caveat), intended use, reproducibility hashes.
+- `docs/ACCEPTANCE_CHECKLIST.md` — every acceptance criterion mapped to
+  evidence.
+
+**Extra pre-flight checks (add to §1):**
+
+- [ ] `curl http://localhost:8000/api/datasets` → 200, `cic2018` READY.
+- [ ] Open `/analyze` once and upload a small CSV — confirm the detection
+      card and panels render (takes ~10 s).
+- [ ] Golden regression: `python -m pytest tests/ -q` → 100 passed
+      (~17 s). If anything fails, the frozen artifacts drifted — do NOT
+      retrain before the demo; investigate instead.

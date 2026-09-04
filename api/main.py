@@ -118,10 +118,20 @@ def forecast(req: ForecastRequest) -> ForecastResponse:
     level = "HIGH" if peak >= 0.8 else ("ELEVATED" if peak >= thr else "LOW")
     crossing = next((k + 1 for k, p in enumerate(probs) if p >= thr), None)
 
+    # V3 rollout companion (additive): per-step stage + risk decoded from the
+    # forecast future STATES. None when V3 is unavailable — never blocks V1.
+    future_steps: list | None = None
+    if mode == "REAL" and state.windows is not None:
+        rf = state.rollout_forecast(anchor)
+        if rf is not None:
+            from api.schemas import FutureStep
+            future_steps = [FutureStep(**s) for s in rf["steps"]]
+
     return ForecastResponse(
         scenario_id=sc["id"], mode=mode, probs=probs, peak=round(peak, 4),
         level=level, stage=stage or "", rule_stage=state.rule_stage_at(anchor),
         threshold=round(thr, 4), crossing_step=crossing, why=why, why_note=why_note,
+        future_steps=future_steps,
     )
 
 
@@ -224,6 +234,89 @@ def live_feed() -> dict:
 @app.get("/api/live/interfaces")
 def live_interfaces() -> dict:
     return {"interfaces": list_interfaces()}
+
+
+# ---- datasets (Phase 12): registry statuses for the Datasets page ----
+@app.get("/api/datasets")
+def datasets() -> dict:
+    """Every registered dataset adapter with its live status and feature
+    capabilities — the Datasets UI renders exactly this, nothing hand-edited."""
+    from src.datasets.registry import get_adapter, registered, status
+    rows = []
+    for ds in registered():
+        a = get_adapter(ds)
+        try:
+            n_files = len(a.discover(ROOT / "data" / "raw"))
+        except Exception:                             # noqa: BLE001
+            n_files = 0
+        rows.append({
+            "id": ds, "name": a.name, "version": a.version,
+            "source_url": a.source_url, "modality": a.modality,
+            "status": status(ds, ROOT / "data" / "raw"),
+            "n_files": n_files,
+        })
+    from src.datasets.registry import DatasetAdapter  # noqa: F401 — interface
+    return {"datasets": rows}
+
+
+# ---- upload analysis (Phase 11): PCAP/CSV → forecast + decision support ----
+import tempfile                                              # noqa: E402
+from fastapi import File, UploadFile                         # noqa: E402
+from starlette.concurrency import run_in_threadpool          # noqa: E402
+
+from src.ingestion.upload_pipeline import (AnalysisError,    # noqa: E402
+                                           UnknownSchemaError,
+                                           analyze_file)
+
+MAX_UPLOAD_BYTES = 100 * 1024 * 1024      # hard cap: 100 MB
+CHUNK = 1024 * 1024
+
+
+def _engines() -> dict:
+    """Evidence + decision-support engines (lazy singletons, shared with the
+    live feed via api.live_state.explain_engines)."""
+    from api.live_state import explain_engines
+    return explain_engines()
+
+
+@app.post("/api/analyze/upload")
+async def analyze_upload(file: UploadFile = File(...)) -> dict:
+    """Analyze an uploaded PCAP/PCAPNG or flow CSV end-to-end: detect the
+    schema (magic bytes / header, with confidence — never a silent guess),
+    window it, forecast per anchor, and attach uncertainty + evidence +
+    decision support. Parse-never-execute: nothing in the file is run."""
+    if state.forecaster is None:
+        raise HTTPException(status_code=503,
+                            detail=f"model not loaded: {state.load_err}")
+
+    suffix = Path(file.filename or "upload.bin").suffix or ".bin"
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    try:
+        size = 0
+        while chunk := await file.read(CHUNK):
+            size += len(chunk)
+            if size > MAX_UPLOAD_BYTES:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"file exceeds the {MAX_UPLOAD_BYTES // (1024*1024)} MB cap")
+            tmp.write(chunk)
+        tmp.close()
+
+        try:
+            eng = _engines()
+            return await run_in_threadpool(
+                analyze_file, tmp.name, state.forecaster,
+                eng["evidence"], eng["ds"])
+        except UnknownSchemaError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except AnalysisError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except Exception as exc:  # noqa: BLE001 — report, never crash the API
+            raise HTTPException(status_code=500,
+                                detail=f"{type(exc).__name__}: {exc}") from exc
+    finally:
+        tmp.close()                      # close() is idempotent; 413 raises
+        Path(tmp.name).unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------- helpers
