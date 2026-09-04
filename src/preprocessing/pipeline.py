@@ -23,26 +23,42 @@ from ..ingestion.csv_loader import load_many
 from ..attack_mapping.mitre_mapper import STAGES, validate_rules
 
 
-def run(raw_dir: Path, out_dir: Path, pcap_dir: Path | None = None, bin_secs: int = 60) -> None:
-    # If pcap_dir is provided and has .binetflow files, we route through ctu13_loader
-    binetflow_files = sorted(pcap_dir.rglob("*.binetflow")) if pcap_dir else []
+def run(raw_dir: Path, out_dir: Path, pcap_dir: Path | None = None, bin_secs: int = 60,
+        ctu13_dir: Path | None = None) -> None:
+    """End-to-end pipeline. Supports CIC-IDS2018, CTU-13, or both combined."""
+    all_flows = []
+    all_files = []
     
-    if binetflow_files:
-        from ..ingestion.ctu13_loader import load_binetflow
-        print(f"\nFound CTU-13 .binetflow files in {pcap_dir}. Using strict CTU-13 loader.")
-        dfs = []
-        for f in binetflow_files:
-            dfs.append(load_binetflow(f))
-        flows = pd.concat(dfs, ignore_index=True)
-        files = binetflow_files
-    else:
-        files = sorted(raw_dir.glob("*.csv"))
-        if not files:
-            raise SystemExit(f"no CSVs under {raw_dir} or .binetflow under {pcap_dir} — run scripts/download_data.py first")
+    # Load CIC-IDS2018 CSVs
+    csv_files = sorted(raw_dir.glob("*.csv"))
+    if csv_files:
         from ..ingestion.csv_loader import load_many
-        flows = load_many(files)
-        
-    print(f"\nloaded {len(flows):,} flows from {len(files)} files "
+        cic_flows = load_many(csv_files)
+        all_flows.append(cic_flows)
+        all_files.extend(csv_files)
+        print(f"\nCIC-IDS2018: {len(cic_flows):,} flows from {len(csv_files)} files")
+    
+    # Load CTU-13 binetflow files
+    if ctu13_dir and ctu13_dir.exists():
+        from ..ingestion.ctu13_loader import load_ctu13_scenario
+        ctu_scenarios = sorted([d for d in ctu13_dir.iterdir() if d.is_dir()])
+        for scenario in ctu_scenarios:
+            binetflow_files = list(scenario.glob("*.binetflow"))
+            if binetflow_files:
+                print(f"  Loading CTU-13 scenario {scenario.name}...")
+                ctu_flows = load_ctu13_scenario(scenario, verbose=False)
+                if len(ctu_flows) > 0:
+                    all_flows.append(ctu_flows)
+                    all_files.extend(binetflow_files)
+                    print(f"    -> {len(ctu_flows):,} flows")
+    
+    if not all_flows:
+        raise SystemExit(f"no data found in {raw_dir} or {ctu13_dir}")
+    
+    flows = pd.concat(all_flows, ignore_index=True)
+    flows = flows.sort_values("Timestamp").reset_index(drop=True)
+    
+    print(f"\ntotal: {len(flows):,} flows from {len(all_files)} files "
           f"({flows['Timestamp'].min()} -> {flows['Timestamp'].max()})")
     print("\nlabel distribution:\n", flows["Label"].value_counts().to_string())
 
@@ -136,9 +152,10 @@ if __name__ == "__main__":
     ap.add_argument("--raw", type=Path, default=Path("data/raw"))
     ap.add_argument("--out", type=Path, default=Path("data/processed"))
     ap.add_argument("--pcap-dir", type=Path, default=None, help="Directory containing raw PCAP files to extract packet-level features.")
+    ap.add_argument("--ctu13-dir", type=Path, default=None, help="Directory containing CTU-13 scenarios.")
     ap.add_argument("--bin-secs", type=int, default=60,
                     help="window bin size in seconds (60 = 1 window/minute). "
                          "30s doubles the sequence count; pick ONE and freeze it "
                          "before Gate 1 — models and demo artifacts must agree.")
     a = ap.parse_args()
-    run(a.raw, a.out, pcap_dir=a.pcap_dir, bin_secs=a.bin_secs)
+    run(a.raw, a.out, pcap_dir=a.pcap_dir, bin_secs=a.bin_secs, ctu13_dir=a.ctu13_dir)

@@ -38,7 +38,7 @@
     "median_lead_windows": 0.0,
     "mean_lead_windows": 0.0,
     "max_lead_windows": 0.0,
-    "threshold": 0.576433002948761,
+    "threshold": 0.6105210185050964,
     "_leads": [
       0
     ],
@@ -48,19 +48,19 @@
   },
   "lstm_forecaster_val": {
     "n_onsets": 3,
-    "n_warned": 1,
-    "warned_rate": 0.3333333333333333,
-    "median_lead_windows": 1.0,
-    "mean_lead_windows": 1.0,
-    "max_lead_windows": 1.0,
-    "threshold": 0.576433002948761,
+    "n_warned": 0,
+    "warned_rate": 0.0,
+    "median_lead_windows": 0.0,
+    "mean_lead_windows": 0.0,
+    "max_lead_windows": 0.0,
+    "threshold": 0.6105210185050964,
     "_leads": [
-      1,
+      0,
       0,
       0
     ],
-    "median_lead_min": 1.0,
-    "mean_lead_min": 1.0,
-    "max_lead_min": 1.0
+    "median_lead_min": 0.0,
+    "mean_lead_min": 0.0,
+    "max_lead_min": 0.0
   }
 }
