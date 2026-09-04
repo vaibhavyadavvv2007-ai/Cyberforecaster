@@ -37,6 +37,74 @@ function displayName(key: string): string {
   return key.replace(/_/g, " ");
 }
 
+/* A metrics-shaped object: the benchmarks tables key off these fields.
+   Strings (feature notes), arrays (feature lists) and nulls are skipped. */
+function isMetricObj(v: unknown): v is ModelMetrics {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    !Array.isArray(v) &&
+    ("pr_auc" in v || "f1" in v)
+  );
+}
+
+type AggRow = { model: string; key: string; m: ModelMetrics; section: string };
+
+/* Flatten one metrics section into table rows. Handles three honest shapes:
+   - plain entries (baseline, lstm):  { model_name: {pr_auc, ...} }
+   - experiment dicts (multidataset): { v1: { pooled_test: {...},
+     per_dataset_test: { cic2018: {...}, ... } } }
+   - run lists (cross_dataset):        { runs: [{ trained_on, tested_on,
+     pr_auc, ... }, ...] } */
+function sectionRows(section: string, value: unknown): AggRow[] {
+  if (Array.isArray(value)) {
+    return value
+      .filter(
+        (r): r is ModelMetrics & { trained_on?: string; tested_on?: string } =>
+          isMetricObj(r),
+      )
+      .map((r, i) => ({
+        model: `${r.trained_on ?? "?"} → ${r.tested_on ?? "?"}`,
+        key: `${section}_run_${i}`,
+        m: r,
+        section,
+      }));
+  }
+  if (typeof value !== "object" || value === null) return [];
+  return Object.entries(value).flatMap(([name, m]) => {
+    if (isMetricObj(m)) {
+      return [{ model: displayName(name), key: name, m, section }];
+    }
+    // a run list nested inside the section (cross_dataset's "runs")
+    if (Array.isArray(m)) return sectionRows(section, m);
+    if (typeof m !== "object" || m === null) return [];
+    const exp = m as {
+      pooled_test?: unknown;
+      per_dataset_test?: Record<string, unknown>;
+    };
+    const rows: AggRow[] = [];
+    if (isMetricObj(exp.pooled_test)) {
+      rows.push({
+        model: `${displayName(name)} · pooled`,
+        key: `${name}_pooled`,
+        m: exp.pooled_test,
+        section,
+      });
+    }
+    for (const [ds, dm] of Object.entries(exp.per_dataset_test ?? {})) {
+      if (isMetricObj(dm)) {
+        rows.push({
+          model: `${displayName(name)} · ${ds}`,
+          key: `${name}_${ds}`,
+          m: dm,
+          section,
+        });
+      }
+    }
+    return rows;
+  });
+}
+
 /* ---- comparison bars: two models per metric, exact values kept ---- */
 const COMPARE_COLS: (keyof ModelMetrics)[] = ["pr_auc", "f1", "recall", "precision", "fpr"];
 
@@ -132,19 +200,15 @@ export default function BenchmarksPage() {
   }
 
   // Every model from every non-lead-time section — the detailed tables keep
-  // all of them, served verbatim.
+  // all of them, served verbatim. Values in a section can be plain metric
+  // objects, experiment dicts (metrics nested under pooled_test /
+  // per_dataset_test), run lists (cross-dataset), or metadata strings/arrays —
+  // only metric-shaped objects become rows, everything else is skipped safely.
   const sections = Object.entries(metrics).filter(
     ([k, v]) => k !== "lead_time" && v && typeof v === "object",
   );
-  const aggRows = sections.flatMap(([section, models]) =>
-    Object.entries(models as Record<string, ModelMetrics>)
-      .filter(([, m]) => "pr_auc" in (m ?? {}) || "f1" in (m ?? {}))
-      .map(([name, m]) => ({
-        model: displayName(name),
-        key: name,
-        m,
-        section,
-      })),
+  const aggRows = sections.flatMap(([section, sectionValue]) =>
+    sectionRows(section, sectionValue),
   );
   const findRow = (match: (key: string) => boolean) => aggRows.find((r) => match(r.key));
   const lstmRow = findRow((k) => k.includes("lstm"));
@@ -338,8 +402,8 @@ export default function BenchmarksPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {aggRows.map(({ model, m }) => (
-                    <tr key={`${model}-${m}`}>
+                  {aggRows.map(({ model, key, m }) => (
+                    <tr key={key}>
                       <td className="rowhead">{model}</td>
                       {COLS.map((c) => (
                         <td key={c} className="num">
@@ -359,8 +423,8 @@ export default function BenchmarksPage() {
           </Card>
 
           {sections.map(([section, models]) =>
-            Object.entries(models as Record<string, ModelMetrics>)
-              .filter(([, m]) => Array.isArray(m?._per_step))
+            Object.entries(models as Record<string, unknown>)
+              .filter(([, m]) => isMetricObj(m) && Array.isArray(m._per_step))
               .map(([name, m]) => (
                 <Card
                   key={`${section}-${name}`}
