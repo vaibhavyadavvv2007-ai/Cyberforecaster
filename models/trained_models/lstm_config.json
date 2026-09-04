@@ -1,11 +1,13 @@
 {
-  "n_feat": 18,
+  "n_feat": 34,
   "horizon": 5,
   "hidden": 64,
   "layers": 2,
-  "val_AP": 0.6789244016182439,
-  "threshold": 0.5181657671928406,
+  "val_AP": 0.7730666773132484,
+  "threshold": 0.5456656217575073,
   "max_fpr": 0.05,
   "predict_next_state": true,
-  "loss_state_weight": 0.5
+  "loss_state_weight": 0.3,
+  "architecture": "lstm",
+  "temperature": 4.450000000000001
 }

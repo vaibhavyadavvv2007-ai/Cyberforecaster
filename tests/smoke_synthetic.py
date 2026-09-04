@@ -46,16 +46,21 @@ def synthetic_flows(n_benign=6000, n_attack_bins=40, flows_per_attack_bin=60):
                 "TotLen Bwd Pkts": float(rng.integers(100, 900_000)),
                 "Flow IAT Mean": float(rng.uniform(100, 50_000_000)),
                 "Flow IAT Std": float("inf") if rng.random() < 0.001 else float(rng.uniform(0, 9e6)),
-                # real column name in the bucket is "Pkt Size Avg" — using the
-                # wrong one here would let the zero-fill bug pass the test
                 "Pkt Size Avg": float(rng.uniform(40, 1500)),
                 "Down/Up Ratio": float(rng.uniform(0, 2)),
                 "SYN Flag Cnt": float(syn), "ACK Flag Cnt": float(1 - syn * 0.7),
                 "FIN Flag Cnt": float(rng.random() < 0.5),
                 "RST Flag Cnt": float(rng.random() < 0.1),
                 "PSH Flag Cnt": float(rng.random() < 0.3),
-                "Src IP": str(rng.choice(srcs)), "Src Port": int(rng.integers(1024, 65535)),
-                "Dst IP": str(rng.choice(dsts)),
+                "Src IP": str(rng.choice(list(srcs))), "Src Port": int(rng.integers(1024, 65535)),
+                "Dst IP": str(rng.choice(list(dsts))),
+                # CSV-derived packet-level features
+                "Init Fwd Win Byts": float(rng.uniform(1024, 65535)),
+                "Init Bwd Win Byts": float(rng.uniform(0, 65535)),
+                "Pkt Len Var": float(rng.uniform(0, 50000)),
+                "Fwd Seg Size Min": float(rng.uniform(20, 1500)),
+                "Fwd Pkt Len Std": float(rng.uniform(0, 500)),
+                "Bwd Pkt Len Std": float(rng.uniform(0, 500)),
             })
 
     for i in range(n_benign):  # background web/dns chatter across the full span

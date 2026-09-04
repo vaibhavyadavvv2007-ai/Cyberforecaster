@@ -77,6 +77,10 @@ class Forecaster:
         return float(self.cfg.get("threshold", 0.5))
 
     @property
+    def temperature(self) -> float:
+        return float(self.cfg.get("temperature", 1.0))
+
+    @property
     def horizon(self) -> int:
         return int(self.cfg.get("horizon", 5))
 
@@ -115,7 +119,9 @@ class Forecaster:
         with torch.no_grad():
             prog_logits, stage_logits, state_pred = self.model(
                 torch.from_numpy(x).float())
-            probs = torch.sigmoid(prog_logits)[0].numpy()
+            # Apply temperature scaling for calibration
+            T = self.temperature
+            probs = torch.sigmoid(prog_logits / T)[0].numpy()
             stage_idx = int(stage_logits[0].argmax())
         result: dict = {
             "probs": [round(float(p), 4) for p in probs],

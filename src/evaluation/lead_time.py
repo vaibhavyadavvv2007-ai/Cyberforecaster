@@ -161,11 +161,12 @@ def main(npz_dir: Path, bin_secs: int = 60,
         if model is None:
             raise RuntimeError(cfg)
         thr_lstm = float(cfg.get("threshold", 0.5))
+        temperature = float(cfg.get("temperature", 1.0))
         with torch.no_grad():
             Xt = torch.from_numpy(apply_scaler(d_te["X"], sc)).float()
-            p = torch.sigmoid(model(Xt)[0]).numpy()
+            p = torch.sigmoid(model(Xt)[0] / temperature).numpy()
             Xv = torch.from_numpy(apply_scaler(d_va["X"], sc)).float()
-            pv = torch.sigmoid(model(Xv)[0]).numpy()
+            pv = torch.sigmoid(model(Xv)[0] / temperature).numpy()
         results["lstm_forecaster"] = to_minutes(
             lead_times(d_te["ends"], p, d_te["y_prog"], horizon, thr_lstm), bin_secs)
         _report("LSTM forecaster (test split)", results["lstm_forecaster"])

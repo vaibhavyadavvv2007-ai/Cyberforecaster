@@ -43,6 +43,24 @@ from ..features.window_builder import WINDOW_FEATURES, horizon_any
 from .baseline_logreg import MAX_FPR, evaluate, pick_threshold, report
 
 N_STAGES = 6
+
+
+def _fit_temperature(logits: np.ndarray, targets: np.ndarray) -> float:
+    """Learn optimal temperature T for Platt scaling on val set.
+    
+    calibrated_prob = sigmoid(logits / T)
+    T > 1 spreads probabilities (less confident), T < 1 concentrates them.
+    Minimizes negative log-likelihood via grid search (fast, no dependencies).
+    """
+    best_T, best_nll = 1.0, float('inf')
+    for T in np.arange(0.1, 5.0, 0.05):
+        cal = 1.0 / (1.0 + np.exp(-logits / T))
+        cal = np.clip(cal, 1e-7, 1 - 1e-7)
+        nll = -np.mean(targets * np.log(cal) + (1 - targets) * np.log(1 - cal))
+        if nll < best_nll:
+            best_nll = nll
+            best_T = float(T)
+    return best_T
 # Val is small (~430 sequences) so per-epoch val AP is NOISY — with patience 8
 # the best checkpoint can land at epoch 4 while the model has barely started
 # fitting (observed: train AP 0.545, max output prob 0.70 after the Aug-28 run).
@@ -254,9 +272,38 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
 
     # threshold on VAL (never test), then honest test numbers
     model = model.to(dev)
-    p_va = _predict(model, Xva, dev) if have_val else None
+    
+    # Temperature scaling: learn T on val logits, then apply to all splits
+    temperature = 1.0
+    if have_val:
+        # Get raw logits (before sigmoid) on val
+        model.eval()
+        val_logits = []
+        with torch.no_grad():
+            for i in range(0, len(Xva), 1024):
+                val_logits.append(model(Xva[i:i+1024].to(dev))[0].cpu().numpy())
+        val_logits = np.concatenate(val_logits)
+        
+        # Fit temperature on flattened val labels vs logits
+        y_any_val = horizon_any(yva.numpy())
+        logits_max = val_logits.max(axis=1)  # use max over horizon steps
+        temperature = _fit_temperature(logits_max, y_any_val)
+        print(f"temperature scaling: T={temperature:.3f}")
+    
+    # Apply temperature to predictions
+    def _predict_calibrated(model, X):
+        model.eval()
+        out = []
+        with torch.no_grad():
+            for i in range(0, len(X), 1024):
+                logits = model(X[i:i+1024].to(dev))[0].cpu().numpy()
+                cal = 1.0 / (1.0 + np.exp(-logits / temperature))
+                out.append(cal)
+        return np.concatenate(out) if out else np.zeros((0, K))
+    
+    p_va = _predict_calibrated(model, Xva) if have_val else None
     thr = pick_threshold(horizon_any(yva.numpy()), p_va.max(axis=1)) if have_val else 0.5
-    p_te = _predict(model, Xte, dev)
+    p_te = _predict_calibrated(model, Xte)
     agg = evaluate(horizon_any(yte.numpy()), p_te.max(axis=1), thr)
     per_step = [evaluate(yte.numpy()[:, k], p_te[:, k], thr) for k in range(K)]
     report("LSTM forecaster", agg, per_step)
@@ -269,7 +316,8 @@ def train(npz_dir: Path, epochs: int = 40, batch: int = 256,
            "val_AP": best_ap, "threshold": thr, "max_fpr": MAX_FPR,
            "predict_next_state": predict_next_state,
            "loss_state_weight": loss_state_weight,
-           "architecture": architecture}
+           "architecture": architecture,
+           "temperature": float(temperature)}
     (out_dir / "lstm_config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
 
     payload = {**agg, "_per_step": per_step, "_n_train": int(len(Xtr)),

@@ -21,12 +21,15 @@ SEQ_LEN = 10   # L: windows of history fed to the model
 HORIZON = 5    # K: windows forecast ahead
 
 WINDOW_FEATURES = [
+    # Flow-level features (from CIC-IDS2018 CSVs)
     "flow_count", "bytes_total", "pkts_total", "duration_mean",
     "syn_ratio", "ack_ratio", "fin_ratio", "rst_ratio", "psh_ratio",
-    "unique_dst_ports", "auth_port_share", "unique_dst_ips", "unique_src_ips",
+    "unique_dst_ports", "auth_port_share",
     "dst_port_entropy", "iat_mean", "iat_std", "avg_pkt_size", "down_up_ratio",
-    # Packet-level features
-    "ttl_mean", "ttl_var", "tcp_win_mean", "tcp_win_var", "frag_ratio", "payload_size_var"
+    # Packet-level features derivable from CSV columns (no PCAP needed)
+    "tcp_win_fwd", "tcp_win_bwd",
+    "pkt_len_var", "fwd_seg_min",
+    "fwd_pkt_len_std", "bwd_pkt_len_std",
 ]
 
 
@@ -67,7 +70,7 @@ def build_windows(flows: pd.DataFrame, bin_secs: int = 60) -> pd.DataFrame:
 
     def _mean(col: str) -> pd.Series:
         if col in df.columns:
-            return g[col].mean()
+            return g[col].mean().fillna(0.0)
         zero_filled.append(col)
         return pd.Series(0.0, index=w.index)
 
@@ -96,27 +99,18 @@ def build_windows(flows: pd.DataFrame, bin_secs: int = 60) -> pd.DataFrame:
         w["auth_port_share"] = 0.0
         w["dst_port_entropy"] = 0.0
 
-    if "Dst IP" in df.columns:
-        w["unique_dst_ips"] = g["Dst IP"].nunique().astype(float)
-    else:
-        w["unique_dst_ips"] = 0.0
-    if "Src IP" in df.columns:
-        w["unique_src_ips"] = g["Src IP"].nunique().astype(float)
-    else:
-        w["unique_src_ips"] = 0.0
-
     w["iat_mean"] = _mean("Flow IAT Mean") / 1e6  # µs → s
     w["iat_std"] = _mean("Flow IAT Std") / 1e6
     w["avg_pkt_size"] = _mean("Pkt Size Avg")
     w["down_up_ratio"] = _mean("Down/Up Ratio")
 
-    # Packet-level features
-    w["ttl_mean"] = _mean("ttl_mean")
-    w["ttl_var"] = _mean("ttl_var")
-    w["tcp_win_mean"] = _mean("tcp_win_mean")
-    w["tcp_win_var"] = _mean("tcp_win_var")
-    w["frag_ratio"] = _mean("frag_ratio")
-    w["payload_size_var"] = _mean("payload_size_var")
+    # Packet-level features derivable from CSV columns (no PCAP needed)
+    w["tcp_win_fwd"] = _mean("Init Fwd Win Byts")
+    w["tcp_win_bwd"] = _mean("Init Bwd Win Byts")
+    w["pkt_len_var"] = _mean("Pkt Len Var")
+    w["fwd_seg_min"] = _mean("Fwd Seg Size Min")
+    w["fwd_pkt_len_std"] = _mean("Fwd Pkt Len Std")
+    w["bwd_pkt_len_std"] = _mean("Bwd Pkt Len Std")
 
     if zero_filled:
         print(f"  WARNING: columns absent from input, features zero-filled: "

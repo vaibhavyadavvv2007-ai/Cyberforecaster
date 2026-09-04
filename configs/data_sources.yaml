@@ -28,10 +28,14 @@ files:
   - key: Processed Traffic Data for ML Algorithms/Thursday-01-03-2018_TrafficForML_CICFlowMeter.csv
     why: "Infiltration day (~108MB, smallest file) — tiny class but big demo-story value"
 
+  - key: Processed Traffic Data for ML Algorithms/Friday-02-03-2018_TrafficForML_CICFlowMeter.csv
+    why: "Additional attack day (~336MB) — more attack variety for better generalization"
+  - key: Processed Traffic Data for ML Algorithms/Thursday-22-02-2018_TrafficForML_CICFlowMeter.csv
+    why: "Additional attack day (~365MB) — more attack variety for better generalization"
+
 # Deliberately SKIPPED:
-#   Thuesday-20-02-2018 (~4.05 GB!) — brute-force/botnet overlap; huge; skip.
-#   Friday-02-03-2018, Thursday-22-02-2018 — add later ONLY if a family is missing.
-# Total planned pull ≈ 2.1 GB.
+#   Thuesday-20-02-2018 (~4.05 GB!) — too large, skip.
+# Total planned pull ≈ 2.8 GB.
 
 # Secondary dataset (manual download, Tier 2): CTU-13 scenario zips
 # https://www.stratosphereips.org/datasets-ctu13 — used ONLY for held-out

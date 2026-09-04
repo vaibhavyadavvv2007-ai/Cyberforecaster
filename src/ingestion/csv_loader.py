@@ -33,6 +33,17 @@ CORE_COLS = [
     "Flow IAT Mean", "Flow IAT Std", "Pkt Size Avg", "Down/Up Ratio",
     "FIN Flag Cnt", "SYN Flag Cnt", "RST Flag Cnt", "PSH Flag Cnt", "ACK Flag Cnt",
     "Src IP", "Src Port", "Dst IP",
+    # Packet-level features derivable from CSV (no PCAP needed)
+    "Init Fwd Win Byts", "Init Bwd Win Byts",
+    "Pkt Len Var", "Fwd Seg Size Min",
+    "Fwd Pkt Len Std", "Bwd Pkt Len Std",
+    # High-value unused features (Session 4b expansion)
+    "Idle Mean", "Idle Std",
+    "Active Mean", "Active Std",
+    "Flow Byts/s", "Flow Pkts/s",
+    "Fwd IAT Mean", "Bwd IAT Mean",
+    "Fwd PSH Flags", "Bwd PSH Flags",
+    "Fwd Header Len", "Bwd Header Len",
 ]
 
 
@@ -78,7 +89,7 @@ def _canonical_label(raw: str) -> str:
 def load_day_csv(path: str | Path, verbose: bool = True) -> pd.DataFrame:
     """Load one day-file into a clean frame with parsed Timestamp + canonical Label."""
     path = Path(path)
-    df = pd.read_csv(path, low_memory=False)
+    df = pd.read_csv(path, low_memory=False, on_bad_lines='skip')
 
     # strip padding from headers and object values
     df.columns = [c.strip() for c in df.columns]
